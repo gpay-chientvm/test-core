@@ -3,7 +3,7 @@
 
 
 import frappe
-from frappe.tests import IntegrationTestCase, UnitTestCase
+from frappe.tests.utils import FrappeTestCase, change_settings
 from frappe.utils.data import (
 	add_days,
 	add_months,
@@ -18,19 +18,10 @@ from frappe.utils.data import (
 
 from erpnext.accounts.doctype.subscription.subscription import get_prorata_factor
 
-EXTRA_TEST_RECORD_DEPENDENCIES = ("UOM", "Item Group", "Item")
+test_dependencies = ("UOM", "Item Group", "Item")
 
 
-class UnitTestSubscription(UnitTestCase):
-	"""
-	Unit tests for Subscription.
-	Use this class for testing individual functions and methods.
-	"""
-
-	pass
-
-
-class TestSubscription(IntegrationTestCase):
+class TestSubscription(FrappeTestCase):
 	def setUp(self):
 		make_plans()
 		create_parties()
@@ -54,7 +45,7 @@ class TestSubscription(IntegrationTestCase):
 			get_date_str(subscription.current_invoice_end),
 		)
 		self.assertEqual(subscription.invoices, [])
-		self.assertEqual(subscription.status, "Trialing")
+		self.assertEqual(subscription.status, "Trialling")
 
 	def test_create_subscription_without_trial_with_correct_period(self):
 		subscription = create_subscription()
@@ -479,7 +470,7 @@ class TestSubscription(IntegrationTestCase):
 		currency = frappe.db.get_value("Sales Invoice", subscription.invoices[0].name, "currency")
 		self.assertEqual(currency, "USD")
 
-	@IntegrationTestCase.change_settings(
+	@change_settings(
 		"Accounts Settings",
 		{"allow_multi_currency_invoices_against_single_party_account": 1},
 	)

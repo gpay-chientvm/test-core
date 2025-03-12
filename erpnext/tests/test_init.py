@@ -1,14 +1,13 @@
 import unittest
 
 import frappe
-from frappe.tests import IntegrationTestCase
 
 from erpnext import encode_company_abbr
 
-EXTRA_TEST_RECORD_DEPENDENCIES = ["Company"]
+test_records = frappe.get_test_records("Company")
 
 
-class TestInit(IntegrationTestCase):
+class TestInit(unittest.TestCase):
 	def test_encode_company_abbr(self):
 		abbr = "NFECT"
 

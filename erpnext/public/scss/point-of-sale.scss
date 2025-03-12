@@ -526,7 +526,8 @@
 
 					> .checkout-btn {
 						@extend .primary-action;
-						background-color: var(--control-bg);
+						background-color: var(--blue-200);
+						color: white;
 					}
 
 					> .edit-cart-btn {
@@ -768,8 +769,8 @@
 
 		.submit-order-btn {
 			@extend .primary-action;
-			background-color: var(--btn-primary);
-			color: var(--neutral);
+			background-color: var(--blue-500);
+			color: white;
 		}
 
 		.section-label {
@@ -1086,49 +1087,34 @@
 
 					> .item-row-wrapper {
 						display: flex;
-						gap: 2px;
-						flex-direction: column;
+						align-items: center;
 						padding: var(--padding-sm) var(--padding-md);
-						border: 1px solid lightgray;
-						border-radius: 10px;
-						background: var(--bg-light-gray);
 
-						> .item-row-data {
-							display: flex;
-							align-items: center;
-
-							> .item-name {
-								@extend .nowrap;
-								font-weight: 500;
-								margin-right: var(--margin-md);
-							}
-
-							> .item-qty {
-								font-weight: 500;
-								margin-left: auto;
-								font-size: small;
-							}
-
-							> .item-rate-disc {
-								display: flex;
-								text-align: right;
-								margin-left: var(--margin-md);
-								justify-content: flex-end;
-								font-size: small;
-
-								> .item-disc {
-									color: var(--dark-green-500);
-								}
-
-								> .item-rate {
-									font-weight: 500;
-									margin-left: var(--margin-md);
-								}
-							}
+						> .item-name {
+							@extend .nowrap;
+							font-weight: 500;
+							margin-right: var(--margin-md);
 						}
 
-						> .item-row-refund {
-							font-size: x-small;
+						> .item-qty {
+							font-weight: 500;
+							margin-left: auto;
+						}
+
+						> .item-rate-disc {
+							display: flex;
+							text-align: right;
+							margin-left: var(--margin-md);
+							justify-content: flex-end;
+
+							> .item-disc {
+								color: var(--dark-green-500);
+							}
+
+							> .item-rate {
+								font-weight: 500;
+								margin-left: var(--margin-md);
+							}
 						}
 					}
 
@@ -1139,12 +1125,6 @@
 					> .payments {
 						font-weight: 700;
 					}
-				}
-
-				> .order-summary-container {
-					display: flex;
-					background: white;
-					gap: 8px;
 				}
 
 				> .summary-btns {

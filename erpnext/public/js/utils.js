@@ -20,11 +20,7 @@ $.extend(erpnext, {
 	},
 
 	toggle_naming_series: function () {
-		if (
-			cur_frm &&
-			cur_frm.fields_dict.naming_series &&
-			cur_frm.meta.naming_rule == 'By "Naming Series" field'
-		) {
+		if (cur_frm && cur_frm.fields_dict.naming_series) {
 			cur_frm.toggle_display("naming_series", cur_frm.doc.__islocal ? true : false);
 		}
 	},
@@ -424,7 +420,7 @@ $.extend(erpnext.utils, {
 		});
 	},
 
-	get_fiscal_year: function (date, with_dates = false, raise_on_missing = true) {
+	get_fiscal_year: function (date, with_dates = false, boolean = false) {
 		if (!frappe.boot.setup_complete) {
 			return;
 		}
@@ -433,30 +429,20 @@ $.extend(erpnext.utils, {
 		}
 
 		let fiscal_year = "";
-		if (
-			frappe.boot.current_fiscal_year &&
-			date >= frappe.boot.current_fiscal_year[1] &&
-			date <= frappe.boot.current_fiscal_year[2]
-		) {
-			if (with_dates) fiscal_year = frappe.boot.current_fiscal_year;
-			else fiscal_year = frappe.boot.current_fiscal_year[0];
-		} else {
-			frappe.call({
-				method: "erpnext.accounts.utils.get_fiscal_year",
-				type: "GET", // make it cacheable
-				args: {
-					date: date,
-					raise_on_missing: raise_on_missing,
-				},
-				async: false,
-				callback: function (r) {
-					if (r.message) {
-						if (with_dates) fiscal_year = r.message;
-						else fiscal_year = r.message[0];
-					}
-				},
-			});
-		}
+		frappe.call({
+			method: "erpnext.accounts.utils.get_fiscal_year",
+			args: {
+				date: date,
+				boolean: boolean,
+			},
+			async: false,
+			callback: function (r) {
+				if (r.message) {
+					if (with_dates) fiscal_year = r.message;
+					else fiscal_year = r.message[0];
+				}
+			},
+		});
 		return fiscal_year;
 	},
 });
@@ -622,7 +608,6 @@ erpnext.utils.update_child_items = function (opts) {
 			docname: d.name,
 			name: d.name,
 			item_code: d.item_code,
-			item_name: d.item_name,
 			delivery_date: d.delivery_date,
 			schedule_date: d.schedule_date,
 			conversion_factor: d.conversion_factor,
@@ -676,7 +661,7 @@ erpnext.utils.update_child_items = function (opts) {
 					method: "erpnext.stock.get_item_details.get_item_details",
 					args: {
 						doc: frm.doc,
-						ctx: {
+						args: {
 							item_code: this.value,
 							set_warehouse: frm.doc.set_warehouse,
 							customer: frm.doc.customer || frm.doc.party_name,
@@ -707,13 +692,7 @@ erpnext.utils.update_child_items = function (opts) {
 					},
 					callback: function (r) {
 						if (r.message) {
-							const {
-								qty,
-								price_list_rate: rate,
-								uom,
-								conversion_factor,
-								item_name,
-							} = r.message;
+							const { qty, price_list_rate: rate, uom, conversion_factor } = r.message;
 
 							const row = dialog.fields_dict.trans_items.df.data.find(
 								(doc) => doc.idx == me.doc.idx
@@ -724,7 +703,6 @@ erpnext.utils.update_child_items = function (opts) {
 									uom: me.doc.uom || uom,
 									qty: me.doc.qty || qty,
 									rate: me.doc.rate || rate,
-									item_name: item_name,
 								});
 								dialog.fields_dict.trans_items.grid.refresh();
 							}
@@ -732,12 +710,6 @@ erpnext.utils.update_child_items = function (opts) {
 					},
 				});
 			},
-		},
-		{
-			fieldtype: "Data",
-			fieldname: "item_name",
-			label: __("Item Name"),
-			read_only: 1,
 		},
 		{
 			fieldtype: "Link",
@@ -794,7 +766,6 @@ erpnext.utils.update_child_items = function (opts) {
 			fieldname: frm.doc.doctype == "Sales Order" ? "delivery_date" : "schedule_date",
 			in_list_view: 1,
 			label: frm.doc.doctype == "Sales Order" ? __("Delivery Date") : __("Reqd by date"),
-			default: frm.doc.doctype == "Sales Order" ? frm.doc.delivery_date : frm.doc.schedule_date,
 			reqd: 1,
 		});
 		fields.splice(3, 0, {
@@ -1047,36 +1018,41 @@ erpnext.utils.map_current_doc = function (opts) {
 	}
 };
 
-frappe.form.link_formatters["Item"] = function (value, doc, df) {
-	return add_link_title(value, doc, df, "item_name");
-};
-
-frappe.form.link_formatters["Employee"] = function (value, doc, df) {
-	return add_link_title(value, doc, df, "employee_name");
-};
-
-frappe.form.link_formatters["Project"] = function (value, doc, df) {
-	return add_link_title(value, doc, df, "project_name");
-};
-
-/**
- * Add a title to a link value based on the provided document and field information.
- *
- * @param {string} value - The value to add a link title to.
- * @param {Object} doc - The document object.
- * @param {Object} df - The field object.
- * @param {string} title_field - The field name for the title.
- * @returns {string} - The link value with the added title.
- */
-function add_link_title(value, doc, df, title_field) {
-	if (doc && value && doc[title_field] && doc[title_field] !== value && doc[df.fieldname] === value) {
-		return value + ": " + doc[title_field];
-	} else if (!value && doc.doctype && doc[title_field]) {
-		return doc[title_field];
+frappe.form.link_formatters["Item"] = function (value, doc) {
+	if (doc && value && doc.item_name && doc.item_name !== value && doc.item_code === value) {
+		return value + ": " + doc.item_name;
+	} else if (!value && doc.doctype && doc.item_name) {
+		// format blank value in child table
+		return doc.item_name;
 	} else {
+		// if value is blank in report view or item code and name are the same, return as is
 		return value;
 	}
-}
+};
+
+frappe.form.link_formatters["Employee"] = function (value, doc) {
+	if (doc && value && doc.employee_name && doc.employee_name !== value && doc.employee === value) {
+		return value + ": " + doc.employee_name;
+	} else if (!value && doc.doctype && doc.employee_name) {
+		// format blank value in child table
+		return doc.employee;
+	} else {
+		// if value is blank in report view or project name and name are the same, return as is
+		return value;
+	}
+};
+
+frappe.form.link_formatters["Project"] = function (value, doc) {
+	if (doc && value && doc.project_name && doc.project_name !== value && doc.project === value) {
+		return value + ": " + doc.project_name;
+	} else if (!value && doc.doctype && doc.project_name) {
+		// format blank value in child table
+		return doc.project;
+	} else {
+		// if value is blank in report view or project name and name are the same, return as is
+		return value;
+	}
+};
 
 // add description on posting time
 $(document).on("app_ready", function () {

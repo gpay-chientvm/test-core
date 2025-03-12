@@ -1,11 +1,10 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # See license.txt
+
 import unittest
 
-from frappe.tests import IntegrationTestCase
-
-IGNORE_TEST_RECORD_DEPENDENCIES = ["Payment Gateway"]
+# test_records = frappe.get_test_records('Payment Gateway Account')
 
 
-class TestPaymentGatewayAccount(IntegrationTestCase):
+class TestPaymentGatewayAccount(unittest.TestCase):
 	pass

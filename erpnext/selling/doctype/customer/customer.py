@@ -15,6 +15,7 @@ from frappe.model.mapper import get_mapped_doc
 from frappe.model.naming import set_name_by_naming_series, set_name_from_naming_options
 from frappe.model.utils.rename_doc import update_linked_doctypes
 from frappe.utils import cint, cstr, flt, get_formatted_email, today
+from frappe.utils.deprecations import deprecated
 from frappe.utils.user import get_users_with_role
 
 from erpnext.accounts.party import get_dashboard_info, validate_party_accounts
@@ -60,14 +61,12 @@ class Customer(TransactionBase):
 		disabled: DF.Check
 		dn_required: DF.Check
 		email_id: DF.ReadOnly | None
-		first_name: DF.ReadOnly | None
 		gender: DF.Link | None
 		image: DF.AttachImage | None
 		industry: DF.Link | None
 		is_frozen: DF.Check
 		is_internal_customer: DF.Check
 		language: DF.Link | None
-		last_name: DF.ReadOnly | None
 		lead_name: DF.Link | None
 		loyalty_program: DF.Link | None
 		loyalty_program_tier: DF.Data | None
@@ -126,7 +125,6 @@ class Customer(TransactionBase):
 				),
 				title=_("Note"),
 				indicator="yellow",
-				alert=True,
 			)
 
 			return new_customer_name
@@ -250,13 +248,11 @@ class Customer(TransactionBase):
 
 	def create_primary_contact(self):
 		if not self.customer_primary_contact and not self.lead_name:
-			if self.mobile_no or self.email_id or self.first_name or self.last_name:
+			if self.mobile_no or self.email_id:
 				contact = make_contact(self)
 				self.db_set("customer_primary_contact", contact.name)
 				self.db_set("mobile_no", self.mobile_no)
 				self.db_set("email_id", self.email_id)
-		elif self.customer_primary_contact:
-			frappe.set_value("Contact", self.customer_primary_contact, "is_primary_contact", 1)  # ensure
 
 	def create_primary_address(self):
 		from frappe.contacts.doctype.address.address import get_address_display
@@ -267,8 +263,6 @@ class Customer(TransactionBase):
 
 			self.db_set("customer_primary_address", address.name)
 			self.db_set("primary_address", address_display)
-		elif self.customer_primary_address:
-			frappe.set_value("Address", self.customer_primary_address, "is_primary_address", 1)  # ensure
 
 	def update_lead_status(self):
 		"""If Customer created from Lead, update lead status to "Converted"
@@ -383,6 +377,24 @@ class Customer(TransactionBase):
 					frappe.bold(self.customer_name)
 				)
 			)
+
+
+@deprecated
+def create_contact(contact, party_type, party, email):
+	"""Create contact based on given contact name"""
+	first, middle, last = parse_full_name(contact)
+	doc = frappe.get_doc(
+		{
+			"doctype": "Contact",
+			"first_name": first,
+			"middle_name": middle,
+			"last_name": last,
+			"is_primary_contact": 1,
+		}
+	)
+	doc.append("email_ids", dict(email_id=email, is_primary=1))
+	doc.append("links", dict(link_doctype=party_type, link_name=party))
+	return doc.insert()
 
 
 @frappe.whitelist()
@@ -571,14 +583,13 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 
 
 @frappe.whitelist()
-def send_emails(customer, customer_outstanding, credit_limit, credit_controller_users_list):
-	if isinstance(credit_controller_users_list, str):
-		credit_controller_users_list = json.loads(credit_controller_users_list)
-	subject = _("Credit limit reached for customer {0}").format(customer)
+def send_emails(args):
+	args = json.loads(args)
+	subject = _("Credit limit reached for customer {0}").format(args.get("customer"))
 	message = _("Credit limit has been crossed for customer {0} ({1}/{2})").format(
-		customer, customer_outstanding, credit_limit
+		args.get("customer"), args.get("customer_outstanding"), args.get("credit_limit")
 	)
-	frappe.sendmail(recipients=credit_controller_users_list, subject=subject, message=message)
+	frappe.sendmail(recipients=args.get("credit_controller_users_list"), subject=subject, message=message)
 
 
 def get_customer_outstanding(customer, company, ignore_outstanding_sales_order=False, cost_center=None):
@@ -725,10 +736,6 @@ def make_contact(args, is_primary_contact=1):
 		contact.add_email(args.get("email_id"), is_primary=True)
 	if args.get("mobile_no"):
 		contact.add_phone(args.get("mobile_no"), is_primary_mobile_no=True)
-	if args.get("first_name"):
-		contact.first_name = args.get("first_name")
-	if args.get("last_name"):
-		contact.last_name = args.get("last_name")
 
 	if flags := args.get("flags"):
 		contact.insert(ignore_permissions=flags.get("ignore_permissions"))

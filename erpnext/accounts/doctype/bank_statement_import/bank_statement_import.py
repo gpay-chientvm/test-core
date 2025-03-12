@@ -79,8 +79,7 @@ class BankStatementImport(DataImport):
 		from frappe.utils.background_jobs import is_job_enqueued
 		from frappe.utils.scheduler import is_scheduler_inactive
 
-		run_now = frappe.flags.in_test or frappe.conf.developer_mode
-		if is_scheduler_inactive() and not run_now:
+		if is_scheduler_inactive() and not frappe.flags.in_test:
 			frappe.throw(_("Scheduler is inactive. Cannot import data."), title=_("Scheduler Inactive"))
 
 		job_id = f"bank_statement_import::{self.name}"
@@ -97,11 +96,11 @@ class BankStatementImport(DataImport):
 				google_sheets_url=self.google_sheets_url,
 				bank=self.bank,
 				template_options=self.template_options,
-				now=run_now,
+				now=frappe.conf.developer_mode or frappe.flags.in_test,
 			)
-			return job_id
+			return True
 
-		return None
+		return False
 
 
 @frappe.whitelist()
@@ -113,8 +112,7 @@ def get_preview_from_template(data_import, import_file=None, google_sheets_url=N
 
 @frappe.whitelist()
 def form_start_import(data_import):
-	job_id = frappe.get_doc("Bank Statement Import", data_import).start_import()
-	return job_id is not None
+	return frappe.get_doc("Bank Statement Import", data_import).start_import()
 
 
 @frappe.whitelist()

@@ -88,13 +88,6 @@ frappe.ui.form.on("BOM Creator", {
 					reqd: 1,
 					default: 1.0,
 				},
-				{ fieldtype: "Section Break" },
-				{
-					label: __("Routing"),
-					fieldtype: "Link",
-					fieldname: "routing",
-					options: "Routing",
-				},
 			],
 			primary_action_label: __("Create"),
 			primary_action: (values) => {
@@ -127,16 +120,6 @@ frappe.ui.form.on("BOM Creator", {
 			return {
 				query: "erpnext.controllers.queries.item_query",
 			};
-		});
-
-		frm.set_query("workstation", (doc) => {
-			if (doc.workstation_type) {
-				return {
-					filters: {
-						workstation_type: doc.workstation_type,
-					},
-				};
-			}
 		});
 	},
 

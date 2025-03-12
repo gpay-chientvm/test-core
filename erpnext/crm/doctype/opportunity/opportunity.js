@@ -318,14 +318,14 @@ erpnext.crm.Opportunity = class Opportunity extends frappe.ui.form.Controller {
 	create_quotation() {
 		frappe.model.open_mapped_doc({
 			method: "erpnext.crm.doctype.opportunity.opportunity.make_quotation",
-			frm: this.frm,
+			frm: cur_frm,
 		});
 	}
 
 	make_customer() {
 		frappe.model.open_mapped_doc({
 			method: "erpnext.crm.doctype.opportunity.opportunity.make_customer",
-			frm: this.frm,
+			frm: cur_frm,
 		});
 	}
 

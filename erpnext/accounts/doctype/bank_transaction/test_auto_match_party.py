@@ -2,22 +2,13 @@
 # License: GNU General Public License v3. See license.txt
 
 import frappe
-from frappe.tests import IntegrationTestCase, UnitTestCase
+from frappe.tests.utils import FrappeTestCase
 from frappe.utils import nowdate
 
 from erpnext.accounts.doctype.bank_transaction.test_bank_transaction import create_bank_account
 
 
-class UnitTestBankTransaction(UnitTestCase):
-	"""
-	Unit tests for BankTransaction.
-	Use this class for testing individual functions and methods.
-	"""
-
-	pass
-
-
-class TestAutoMatchParty(IntegrationTestCase):
+class TestAutoMatchParty(FrappeTestCase):
 	@classmethod
 	def setUpClass(cls):
 		create_bank_account()

@@ -279,7 +279,9 @@ def get_regional_address_details(party_details, doctype, company):
 	pass
 
 
-def complete_contact_details(party_details):
+def set_contact_details(party_details, party, party_type):
+	party_details.contact_person = get_default_contact(party_type, party.name)
+
 	if not party_details.contact_person:
 		party_details.update(
 			{
@@ -306,11 +308,6 @@ def complete_contact_details(party_details):
 		contact_details = frappe.db.get_value("Contact", party_details.contact_person, fields, as_dict=True)
 
 		party_details.update(contact_details)
-
-
-def set_contact_details(party_details, party, party_type):
-	party_details.contact_person = get_default_contact(party_type, party.name)
-	complete_contact_details(party_details)
 
 
 def set_other_values(party_details, party, party_type):
@@ -569,20 +566,19 @@ def validate_party_accounts(doc):
 
 		# validate if account is mapped for same company
 		if account.account:
-			validate_account_head(account.idx, account.account, account.company, _("Debtor/Creditor"))
+			validate_account_head(account.idx, account.account, account.company)
 		if account.advance_account:
-			validate_account_head(
-				account.idx, account.advance_account, account.company, _("Debtor/Creditor Advance")
-			)
+			validate_account_head(account.idx, account.advance_account, account.company)
 
 
 @frappe.whitelist()
-def get_due_date(posting_date, party_type, party, company=None, bill_date=None):
+def get_due_date(posting_date, party_type, party, company=None, bill_date=None, template_name=None):
 	"""Get due date from `Payment Terms Template`"""
 	due_date = None
 	if (bill_date or posting_date) and party:
 		due_date = bill_date or posting_date
-		template_name = get_payment_terms_template(party, party_type, company)
+		if not template_name:
+			template_name = get_payment_terms_template(party, party_type, company)
 
 		if template_name:
 			due_date = get_due_date_from_template(template_name, posting_date, bill_date).strftime("%Y-%m-%d")
@@ -621,41 +617,34 @@ def get_due_date_from_template(template_name, posting_date, bill_date):
 	return due_date
 
 
-def validate_due_date(posting_date, due_date, bill_date=None, template_name=None, doctype=None):
+def validate_due_date(posting_date, due_date, bill_date=None, template_name=None):
 	if getdate(due_date) < getdate(posting_date):
-		doctype_date = "Date"
-		if doctype == "Purchase Invoice":
-			doctype_date = "Supplier Invoice Date"
-
-		if doctype == "Sales Invoice":
-			doctype_date = "Posting Date"
-
-		frappe.throw(_("Due Date cannot be before {0}").format(doctype_date))
+		frappe.throw(_("Due Date cannot be before Posting / Supplier Invoice Date"))
 	else:
-		validate_due_date_with_template(posting_date, due_date, bill_date, template_name)
+		if not template_name:
+			return
 
-
-def validate_due_date_with_template(posting_date, due_date, bill_date, template_name):
-	if not template_name:
-		return
-
-	default_due_date = format(get_due_date_from_template(template_name, posting_date, bill_date))
-
-	if not default_due_date:
-		return
-
-	if default_due_date != posting_date and getdate(due_date) > getdate(default_due_date):
-		is_credit_controller = (
-			frappe.db.get_single_value("Accounts Settings", "credit_controller") in frappe.get_roles()
+		default_due_date = get_due_date_from_template(template_name, posting_date, bill_date).strftime(
+			"%Y-%m-%d"
 		)
-		if is_credit_controller:
-			msgprint(
-				_("Note: Due Date exceeds allowed customer credit days by {0} day(s)").format(
-					date_diff(due_date, default_due_date)
-				)
+
+		if not default_due_date:
+			return
+
+		if default_due_date != posting_date and getdate(due_date) > getdate(default_due_date):
+			is_credit_controller = (
+				frappe.db.get_single_value("Accounts Settings", "credit_controller") in frappe.get_roles()
 			)
-		else:
-			frappe.throw(_("Due Date cannot be after {0}").format(formatdate(default_due_date)))
+			if is_credit_controller:
+				msgprint(
+					_("Note: Due / Reference Date exceeds allowed customer credit days by {0} day(s)").format(
+						date_diff(due_date, default_due_date)
+					)
+				)
+			else:
+				frappe.throw(
+					_("Due / Reference Date cannot be after {0}").format(formatdate(default_due_date))
+				)
 
 
 @frappe.whitelist()

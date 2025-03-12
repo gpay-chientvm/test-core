@@ -63,7 +63,7 @@ class RepostItemValuation(Document):
 		frappe.db.delete(
 			table,
 			filters=(
-				(table.creation < (Now() - Interval(days=days)))
+				(table.modified < (Now() - Interval(days=days)))
 				& (table.status.isin(["Completed", "Skipped"]))
 			),
 		)
@@ -97,27 +97,27 @@ class RepostItemValuation(Document):
 				]
 			)
 
-		# Stock Closing Balance
+		# Closing Stock Balance
 		closing_stock = self.get_closing_stock_balance()
 		if closing_stock and closing_stock[0].name:
-			name = get_link_to_form("Stock Closing Entry", closing_stock[0].name)
-			to_date = frappe.format(closing_stock[0].posting_date, "Date")
-			frappe.throw(
-				_("Due to stock closing entry {0}, you cannot repost item valuation before {1}").format(
-					name, to_date
-				)
-			)
+			name = get_link_to_form("Closing Stock Balance", closing_stock[0].name)
+			to_date = frappe.format(closing_stock[0].to_date, "Date")
+			msg = f"Due to closing stock balance {name}, you cannot repost item valuation before {to_date}"
+			frappe.throw(_(msg))
 
 	def get_closing_stock_balance(self):
 		filters = {
 			"company": self.company,
-			"to_date": (">=", self.posting_date),
 			"status": "Completed",
+			"docstatus": 1,
+			"to_date": (">=", self.posting_date),
 		}
 
-		return frappe.get_all(
-			"Stock Closing Entry", fields=["name", "to_date as posting_date"], filters=filters, limit=1
-		)
+		for field in ["warehouse", "item_code"]:
+			if self.get(field):
+				filters.update({field: ("in", ["", self.get(field)])})
+
+		return frappe.get_all("Closing Stock Balance", fields=["name", "to_date"], filters=filters)
 
 	@staticmethod
 	def get_max_period_closing_date(company):
@@ -132,7 +132,12 @@ class RepostItemValuation(Document):
 		return query[0][0] if query and query[0][0] else None
 
 	def validate_accounts_freeze(self):
-		acc_settings = frappe.get_cached_doc("Accounts Settings")
+		acc_settings = frappe.db.get_value(
+			"Accounts Settings",
+			"Accounts Settings",
+			["acc_frozen_upto", "frozen_accounts_modifier"],
+			as_dict=1,
+		)
 		if not acc_settings.acc_frozen_upto:
 			return
 		if getdate(self.posting_date) <= getdate(acc_settings.acc_frozen_upto):
@@ -317,7 +322,7 @@ def remove_attached_file(docname):
 	if file_name := frappe.db.get_value(
 		"File", {"attached_to_name": docname, "attached_to_doctype": "Repost Item Valuation"}, "name"
 	):
-		frappe.delete_doc("File", file_name, ignore_permissions=True, delete_permanently=True, force=True)
+		frappe.delete_doc("File", file_name, ignore_permissions=True, delete_permanently=True)
 
 
 def repost_sl_entries(doc):
@@ -481,9 +486,4 @@ def in_configured_timeslot(repost_settings=None, current_time=None):
 @frappe.whitelist()
 def execute_repost_item_valuation():
 	"""Execute repost item valuation via scheduler."""
-	if name := frappe.db.get_value(
-		"Scheduled Job Type",
-		{"method": "erpnext.stock.doctype.repost_item_valuation.repost_item_valuation.repost_entries"},
-		"name",
-	):
-		frappe.get_doc("Scheduled Job Type", name).enqueue(force=True)
+	frappe.get_doc("Scheduled Job Type", "repost_item_valuation.repost_entries").enqueue(force=True)

@@ -2,17 +2,8 @@
 # See license.txt
 
 # import frappe
-from frappe.tests import IntegrationTestCase, UnitTestCase
+from frappe.tests.utils import FrappeTestCase
 
 
-class UnitTestBulkTransactionLog(UnitTestCase):
-	"""
-	Unit tests for BulkTransactionLog.
-	Use this class for testing individual functions and methods.
-	"""
-
-	pass
-
-
-class TestBulkTransactionLog(IntegrationTestCase):
+class TestBulkTransactionLog(FrappeTestCase):
 	pass

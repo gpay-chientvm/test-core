@@ -1,14 +1,14 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors and Contributors
 # See license.txt
+
 import unittest
 
 import frappe
-from frappe.tests import IntegrationTestCase
 
 from erpnext.projects.doctype.activity_cost.activity_cost import DuplicationError
 
 
-class TestActivityCost(IntegrationTestCase):
+class TestActivityCost(unittest.TestCase):
 	def test_duplication(self):
 		frappe.db.sql("delete from `tabActivity Cost`")
 		activity_cost1 = frappe.new_doc("Activity Cost")

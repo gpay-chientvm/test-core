@@ -1,11 +1,11 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
+
 import json
 import unittest
 
 import frappe
 from frappe import _
-from frappe.tests import IntegrationTestCase
 from frappe.utils import random_string
 
 from erpnext.accounts.doctype.account.chart_of_accounts.chart_of_accounts import (
@@ -13,17 +13,12 @@ from erpnext.accounts.doctype.account.chart_of_accounts.chart_of_accounts import
 )
 from erpnext.setup.doctype.company.company import get_default_company_address
 
-IGNORE_TEST_RECORD_DEPENDENCIES = [
-	"Account",
-	"Cost Center",
-	"Payment Terms Template",
-	"Salary Component",
-	"Warehouse",
-]
-EXTRA_TEST_RECORD_DEPENDENCIES = ["Fiscal Year"]
+test_ignore = ["Account", "Cost Center", "Payment Terms Template", "Salary Component", "Warehouse"]
+test_dependencies = ["Fiscal Year"]
+test_records = frappe.get_test_records("Company")
 
 
-class TestCompany(IntegrationTestCase):
+class TestCompany(unittest.TestCase):
 	def test_coa_based_on_existing_company(self):
 		company = frappe.new_doc("Company")
 		company.company_name = "COA from Existing Company"
@@ -115,7 +110,7 @@ class TestCompany(IntegrationTestCase):
 		max_rgt = frappe.db.sql("select max(rgt) from `tabCompany`")[0][0]
 
 		if not records:
-			records = self.globalTestRecords["Company"][2:]
+			records = test_records[2:]
 
 		for company in records:
 			lft, rgt, parent_company = frappe.db.get_value(

@@ -4,7 +4,7 @@
 
 import frappe
 from frappe import qb
-from frappe.tests import IntegrationTestCase, UnitTestCase
+from frappe.tests.utils import FrappeTestCase, change_settings
 from frappe.utils import add_days, add_years, flt, getdate, nowdate, today
 from frappe.utils.data import getdate as convert_to_date
 
@@ -18,19 +18,10 @@ from erpnext.accounts.utils import get_fiscal_year
 from erpnext.buying.doctype.purchase_order.test_purchase_order import create_purchase_order
 from erpnext.stock.doctype.item.test_item import create_item
 
-EXTRA_TEST_RECORD_DEPENDENCIES = ["Item"]
+test_dependencies = ["Item"]
 
 
-class UnitTestPaymentReconciliation(UnitTestCase):
-	"""
-	Unit tests for PaymentReconciliation.
-	Use this class for testing individual functions and methods.
-	"""
-
-	pass
-
-
-class TestPaymentReconciliation(IntegrationTestCase):
+class TestPaymentReconciliation(FrappeTestCase):
 	def setUp(self):
 		self.create_company()
 		self.create_item()
@@ -1244,7 +1235,7 @@ class TestPaymentReconciliation(IntegrationTestCase):
 		payment_vouchers = [x.get("reference_name") for x in pr.get("payments")]
 		self.assertCountEqual(payment_vouchers, [je2.name, pe2.name])
 
-	@IntegrationTestCase.change_settings(
+	@change_settings(
 		"Accounts Settings",
 		{
 			"allow_multi_currency_invoices_against_single_party_account": 1,

@@ -38,7 +38,7 @@
    "link_fieldname": "template"
   }
  ],
- "modified": "2024-03-27 13:10:28.126214",
+ "modified": "2020-10-27 16:18:53.579688",
  "modified_by": "Administrator",
  "module": "Quality Management",
  "name": "Quality Feedback Template",
@@ -58,8 +58,7 @@
   }
  ],
  "quick_entry": 1,
- "sort_field": "creation",
+ "sort_field": "modified",
  "sort_order": "DESC",
- "states": [],
  "track_changes": 1
 }

@@ -23,9 +23,8 @@ class CouponCode(Document):
 		coupon_type: DF.Literal["Promotional", "Gift Card"]
 		customer: DF.Link | None
 		description: DF.TextEditor | None
-		from_external_ecomm_platform: DF.Check
 		maximum_use: DF.Int
-		pricing_rule: DF.Link | None
+		pricing_rule: DF.Link
 		used: DF.Int
 		valid_from: DF.Date | None
 		valid_upto: DF.Date | None

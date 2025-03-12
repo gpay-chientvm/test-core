@@ -18,7 +18,7 @@ def reorder_item():
 	if not (frappe.db.a_row_exists("Company") and frappe.db.a_row_exists("Fiscal Year")):
 		return
 
-	if cint(frappe.db.get_single_value("Stock Settings", "auto_indent")):
+	if cint(frappe.db.get_value("Stock Settings", None, "auto_indent")):
 		return _reorder_item()
 
 
@@ -303,7 +303,7 @@ def create_material_request(material_requests):
 	if company_wise_mr:
 		if getattr(frappe.local, "reorder_email_notify", None) is None:
 			frappe.local.reorder_email_notify = cint(
-				frappe.db.get_single_value("Stock Settings", "reorder_email_notify")
+				frappe.db.get_value("Stock Settings", None, "reorder_email_notify")
 			)
 
 		if frappe.local.reorder_email_notify:
@@ -376,7 +376,7 @@ def notify_errors(exceptions_list):
 		_("Dear System Manager,")
 		+ "<br>"
 		+ _(
-			"An error occurred for certain Items while creating Material Requests based on Re-order level. Please rectify these issues :"
+			"An error occured for certain Items while creating Material Requests based on Re-order level. Please rectify these issues :"
 		)
 		+ "<br>"
 	)

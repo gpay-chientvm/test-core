@@ -1,5 +1,5 @@
 import frappe
-from frappe.tests import IntegrationTestCase
+from frappe.tests.utils import FrappeTestCase
 from frappe.utils import today
 
 from erpnext.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
@@ -7,7 +7,7 @@ from erpnext.accounts.report.accounts_payable.accounts_payable import execute
 from erpnext.accounts.test.accounts_mixin import AccountsTestMixin
 
 
-class TestAccountsPayable(AccountsTestMixin, IntegrationTestCase):
+class TestAccountsPayable(AccountsTestMixin, FrappeTestCase):
 	def setUp(self):
 		self.create_company()
 		self.create_customer()
@@ -37,6 +37,23 @@ class TestAccountsPayable(AccountsTestMixin, IntegrationTestCase):
 		data = execute(filters)
 		self.assertEqual(data[1][0].get("outstanding"), 300)
 		self.assertEqual(data[1][0].get("currency"), "USD")
+
+	def test_account_payable_for_debit_note(self):
+		pi = self.create_purchase_invoice(do_not_submit=True)
+		pi.is_return = 1
+		pi.items[0].qty = -1
+		pi = pi.save().submit()
+
+		filters = {
+			"company": self.company,
+			"party_type": "Supplier",
+			"party": [self.supplier],
+			"report_date": today(),
+			"range": "30, 60, 90, 120",
+		}
+
+		data = execute(filters)
+		self.assertEqual(data[1][0].get("invoiced"), 300)
 
 	def create_purchase_invoice(self, do_not_submit=False):
 		frappe.set_user("Administrator")

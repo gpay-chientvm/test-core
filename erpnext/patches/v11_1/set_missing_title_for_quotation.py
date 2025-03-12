@@ -9,6 +9,7 @@ def execute():
 		update tabQuotation, tabCustomer
 		set
 			tabQuotation.customer_name = tabCustomer.customer_name,
+			tabQuotation.title = tabCustomer.customer_name
 		where
 			tabQuotation.customer_name is null
 			and tabQuotation.party_name = tabCustomer.name
@@ -23,6 +24,7 @@ def execute():
 		update tabQuotation, tabLead
 		set
 			tabQuotation.customer_name =  case when ifnull(tabLead.company_name, '') != '' then tabLead.company_name else tabLead.lead_name end,
+			tabQuotation.title = case when ifnull(tabLead.company_name, '') != '' then tabLead.company_name else tabLead.lead_name end
 		where
 			tabQuotation.customer_name is null
 			and tabQuotation.party_name = tabLead.name

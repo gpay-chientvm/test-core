@@ -13,7 +13,6 @@ from pypika import functions as fn
 import erpnext
 from erpnext.accounts.utils import get_account_currency
 from erpnext.assets.doctype.asset.asset import get_asset_account, is_cwip_accounting_enabled
-from erpnext.assets.doctype.asset_category.asset_category import get_asset_category_account
 from erpnext.buying.utils import check_on_hold_or_closed_status
 from erpnext.controllers.accounts_controller import merge_taxes
 from erpnext.controllers.buying_controller import BuyingController
@@ -41,7 +40,7 @@ class PurchaseReceipt(BuyingController):
 		from erpnext.stock.doctype.purchase_receipt_item.purchase_receipt_item import PurchaseReceiptItem
 
 		additional_discount_percentage: DF.Float
-		address_display: DF.TextEditor | None
+		address_display: DF.SmallText | None
 		amended_from: DF.Link | None
 		apply_discount_on: DF.Literal["", "Grand Total", "Net Total"]
 		apply_putaway_rule: DF.Check
@@ -58,7 +57,7 @@ class PurchaseReceipt(BuyingController):
 		base_total: DF.Currency
 		base_total_taxes_and_charges: DF.Currency
 		billing_address: DF.Link | None
-		billing_address_display: DF.TextEditor | None
+		billing_address_display: DF.SmallText | None
 		buying_price_list: DF.Link | None
 		company: DF.Link
 		contact_display: DF.SmallText | None
@@ -111,7 +110,7 @@ class PurchaseReceipt(BuyingController):
 		set_posting_time: DF.Check
 		set_warehouse: DF.Link | None
 		shipping_address: DF.Link | None
-		shipping_address_display: DF.TextEditor | None
+		shipping_address_display: DF.SmallText | None
 		shipping_rule: DF.Link | None
 		status: DF.Literal[
 			"", "Draft", "Partly Billed", "To Bill", "Completed", "Return Issued", "Cancelled", "Closed"
@@ -311,7 +310,7 @@ class PurchaseReceipt(BuyingController):
 			)
 
 	def po_required(self):
-		if frappe.db.get_single_value("Buying Settings", "po_required") == "Yes":
+		if frappe.db.get_value("Buying Settings", None, "po_required") == "Yes":
 			for d in self.get("items"):
 				if not d.purchase_order:
 					frappe.throw(_("Purchase Order number required for Item {0}").format(d.item_code))
@@ -383,39 +382,6 @@ class PurchaseReceipt(BuyingController):
 		self.repost_future_sle_and_gle()
 		self.set_consumed_qty_in_subcontract_order()
 		self.reserve_stock_for_sales_order()
-		self.update_received_qty_if_from_pp()
-
-	def update_received_qty_if_from_pp(self):
-		from frappe.query_builder.functions import Sum
-
-		items_from_po = [item.purchase_order_item for item in self.items if item.purchase_order_item]
-		if items_from_po:
-			table = frappe.qb.DocType("Purchase Order Item")
-			subquery = (
-				frappe.qb.from_(table)
-				.select(table.production_plan_sub_assembly_item)
-				.distinct()
-				.where(table.name.isin(items_from_po) & table.production_plan_sub_assembly_item.isnotnull())
-			)
-			result = subquery.run(as_dict=True)
-			if result:
-				result = [item.production_plan_sub_assembly_item for item in result]
-				query = (
-					frappe.qb.from_(table)
-					.select(
-						table.production_plan_sub_assembly_item,
-						Sum(table.received_qty / (table.qty / table.fg_item_qty)).as_("received_qty"),
-					)
-					.where(table.production_plan_sub_assembly_item.isin(result))
-					.groupby(table.production_plan_sub_assembly_item)
-				)
-				for row in query.run(as_dict=True):
-					frappe.set_value(
-						"Production Plan Sub Assembly Item",
-						row.production_plan_sub_assembly_item,
-						"received_qty",
-						row.received_qty,
-					)
 
 	def check_next_docstatus(self):
 		submit_rv = frappe.db.sql(
@@ -457,7 +423,6 @@ class PurchaseReceipt(BuyingController):
 		)
 		self.delete_auto_created_batches()
 		self.set_consumed_qty_in_subcontract_order()
-		self.update_received_qty_if_from_pp()
 
 	def before_cancel(self):
 		super().before_cancel()
@@ -716,8 +681,18 @@ class PurchaseReceipt(BuyingController):
 					else self.get_company_default("stock_received_but_not_billed")
 				)
 				landed_cost_entries = get_item_account_wise_additional_cost(self.name)
+
 				if d.is_fixed_asset:
-					stock_asset_account_name = d.expense_account
+					account_type = (
+						"capital_work_in_progress_account"
+						if is_cwip_accounting_enabled(d.asset_category)
+						else "fixed_asset_account"
+					)
+
+					stock_asset_account_name = get_asset_account(
+						account_type, asset_category=d.asset_category, company=self.company
+					)
+
 					stock_value_diff = (
 						flt(d.base_net_amount) + flt(d.item_tax_amount) + flt(d.landed_cost_voucher_amount)
 					)
@@ -841,7 +816,7 @@ class PurchaseReceipt(BuyingController):
 			# Backward compatibility:
 			# and charges added via Landed Cost Voucher,
 			# post valuation related charges on "Stock Received But Not Billed"
-			against_accounts = ", ".join([d.account for d in gl_entries if flt(d.debit) > 0])
+			against_account = ", ".join([d.account for d in gl_entries if flt(d.debit) > 0])
 			total_valuation_amount = sum(valuation_tax.values())
 			amount_including_divisional_loss = negative_expense_to_be_booked
 			i = 1
@@ -863,7 +838,7 @@ class PurchaseReceipt(BuyingController):
 						debit=0.0,
 						credit=applicable_amount,
 						remarks=self.remarks or _("Accounting Entry for Stock"),
-						against_account=against_accounts,
+						against_account=against_account,
 						item=tax,
 					)
 
@@ -995,32 +970,32 @@ def update_billed_amount_based_on_po(po_details, update_modified=True, pr_doc=No
 		billed_against_po = flt(po_billed_amt_details.get(pr_item.purchase_order_item))
 
 		# Get billed amount directly against Purchase Receipt
-		billed_amt_against_pr = flt(pr_items_billed_amount.get(pr_item.name, 0))
+		billed_amt_agianst_pr = flt(pr_items_billed_amount.get(pr_item.name, 0))
 
 		# Distribute billed amount directly against PO between PRs based on FIFO
-		if billed_against_po and billed_amt_against_pr < pr_item.amount:
-			pending_to_bill = flt(pr_item.amount) - billed_amt_against_pr
+		if billed_against_po and billed_amt_agianst_pr < pr_item.amount:
+			pending_to_bill = flt(pr_item.amount) - billed_amt_agianst_pr
 			if pending_to_bill <= billed_against_po:
-				billed_amt_against_pr += pending_to_bill
+				billed_amt_agianst_pr += pending_to_bill
 				billed_against_po -= pending_to_bill
 			else:
-				billed_amt_against_pr += billed_against_po
+				billed_amt_agianst_pr += billed_against_po
 				billed_against_po = 0
 
 		po_billed_amt_details[pr_item.purchase_order_item] = billed_against_po
 
-		if pr_item.billed_amt != billed_amt_against_pr:
+		if pr_item.billed_amt != billed_amt_agianst_pr:
 			# update existing doc if possible
 			if pr_doc and pr_item.parent == pr_doc.name:
 				pr_item = next((item for item in pr_doc.items if item.name == pr_item.name), None)
-				pr_item.db_set("billed_amt", billed_amt_against_pr, update_modified=update_modified)
+				pr_item.db_set("billed_amt", billed_amt_agianst_pr, update_modified=update_modified)
 
 			else:
 				frappe.db.set_value(
 					"Purchase Receipt Item",
 					pr_item.name,
 					"billed_amt",
-					billed_amt_against_pr,
+					billed_amt_agianst_pr,
 					update_modified=update_modified,
 				)
 

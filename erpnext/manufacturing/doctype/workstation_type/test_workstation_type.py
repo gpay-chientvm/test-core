@@ -2,19 +2,10 @@
 # See license.txt
 
 import frappe
-from frappe.tests import IntegrationTestCase, UnitTestCase
+from frappe.tests.utils import FrappeTestCase
 
 
-class UnitTestWorkstationType(UnitTestCase):
-	"""
-	Unit tests for WorkstationType.
-	Use this class for testing individual functions and methods.
-	"""
-
-	pass
-
-
-class TestWorkstationType(IntegrationTestCase):
+class TestWorkstationType(FrappeTestCase):
 	pass
 
 

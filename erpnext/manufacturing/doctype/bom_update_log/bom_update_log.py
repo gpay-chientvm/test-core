@@ -51,7 +51,7 @@ class BOMUpdateLog(Document):
 		table = DocType("BOM Update Log")
 		frappe.db.delete(
 			table,
-			filters=((table.creation < (Now() - Interval(days=days))) & (table.update_type == "Update Cost")),
+			filters=((table.modified < (Now() - Interval(days=days))) & (table.update_type == "Update Cost")),
 		)
 
 	def validate(self):

@@ -92,7 +92,9 @@ class Account(NestedSet):
 			super().on_update()
 
 	def onload(self):
-		frozen_accounts_modifier = frappe.db.get_single_value("Accounts Settings", "frozen_accounts_modifier")
+		frozen_accounts_modifier = frappe.db.get_value(
+			"Accounts Settings", "Accounts Settings", "frozen_accounts_modifier"
+		)
 		if not frozen_accounts_modifier or frozen_accounts_modifier in frappe.get_roles():
 			self.set_onload("can_freeze_account", True)
 
@@ -605,12 +607,16 @@ def _ensure_idle_system():
 	if frappe.flags.in_test:
 		return
 
+	last_gl_update = None
 	try:
 		# We also lock inserts to GL entry table with for_update here.
 		last_gl_update = frappe.db.get_value("GL Entry", {}, "modified", for_update=True, wait=False)
 	except frappe.QueryTimeoutError:
 		# wait=False fails immediately if there's an active transaction.
 		last_gl_update = add_to_date(None, seconds=-1)
+
+	if not last_gl_update:
+		return
 
 	if last_gl_update > add_to_date(None, minutes=-5):
 		frappe.throw(

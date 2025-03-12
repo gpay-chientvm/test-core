@@ -112,7 +112,7 @@ frappe.ui.form.on("Purchase Order", {
 						args: {
 							subcontract_order: frm.doc.name,
 							rm_details: po_details,
-							order_doctype: frm.doc.doctype,
+							order_doctype: cur_frm.doc.doctype,
 						},
 						callback: function (r) {
 							if (r && r.message) {
@@ -305,8 +305,8 @@ erpnext.buying.PurchaseOrderController = class PurchaseOrderController extends (
 		var allow_receipt = false;
 		var is_drop_ship = false;
 
-		for (var i in this.frm.doc.items) {
-			var item = this.frm.doc.items[i];
+		for (var i in cur_frm.doc.items) {
+			var item = cur_frm.doc.items[i];
 			if (item.delivered_by_supplier !== 1) {
 				allow_receipt = true;
 			} else {
@@ -389,15 +389,13 @@ erpnext.buying.PurchaseOrderController = class PurchaseOrderController extends (
 					if (flt(doc.per_received) < 100 && allow_receipt) {
 						this.frm.add_custom_button(
 							__("Purchase Receipt"),
-							() => {
-								me.make_purchase_receipt();
-							},
+							this.make_purchase_receipt,
 							__("Create")
 						);
 						if (doc.is_subcontracted) {
 							if (doc.is_old_subcontracting_flow) {
 								if (me.has_unsupplied_items()) {
-									this.frm.add_custom_button(
+									cur_frm.add_custom_button(
 										__("Material to Supplier"),
 										function () {
 											me.make_stock_entry();
@@ -422,9 +420,7 @@ erpnext.buying.PurchaseOrderController = class PurchaseOrderController extends (
 					if (flt(doc.per_billed) < 100)
 						this.frm.add_custom_button(
 							__("Purchase Invoice"),
-							() => {
-								me.make_purchase_invoice();
-							},
+							this.make_purchase_invoice,
 							__("Create")
 						);
 
@@ -466,10 +462,10 @@ erpnext.buying.PurchaseOrderController = class PurchaseOrderController extends (
 					}
 				}
 
-				this.frm.page.set_inner_btn_group_as_primary(__("Create"));
+				cur_frm.page.set_inner_btn_group_as_primary(__("Create"));
 			}
 		} else if (doc.docstatus === 0) {
-			this.frm.cscript.add_from_mappers();
+			cur_frm.cscript.add_from_mappers();
 		}
 	}
 
@@ -506,8 +502,8 @@ erpnext.buying.PurchaseOrderController = class PurchaseOrderController extends (
 		frappe.call({
 			method: "erpnext.controllers.subcontracting_controller.make_rm_stock_entry",
 			args: {
-				subcontract_order: this.frm.doc.name,
-				order_doctype: this.frm.doc.doctype,
+				subcontract_order: cur_frm.doc.name,
+				order_doctype: cur_frm.doc.doctype,
 			},
 			callback: function (r) {
 				var doclist = frappe.model.sync(r.message);
@@ -526,7 +522,7 @@ erpnext.buying.PurchaseOrderController = class PurchaseOrderController extends (
 	make_purchase_receipt() {
 		frappe.model.open_mapped_doc({
 			method: "erpnext.buying.doctype.purchase_order.purchase_order.make_purchase_receipt",
-			frm: this.frm,
+			frm: cur_frm,
 			freeze_message: __("Creating Purchase Receipt ..."),
 		});
 	}
@@ -534,14 +530,14 @@ erpnext.buying.PurchaseOrderController = class PurchaseOrderController extends (
 	make_purchase_invoice() {
 		frappe.model.open_mapped_doc({
 			method: "erpnext.buying.doctype.purchase_order.purchase_order.make_purchase_invoice",
-			frm: this.frm,
+			frm: cur_frm,
 		});
 	}
 
 	make_subcontracting_order() {
 		frappe.model.open_mapped_doc({
 			method: "erpnext.buying.doctype.purchase_order.purchase_order.make_subcontracting_order",
-			frm: this.frm,
+			frm: cur_frm,
 			freeze_message: __("Creating Subcontracting Order ..."),
 		});
 	}
@@ -700,7 +696,7 @@ erpnext.buying.PurchaseOrderController = class PurchaseOrderController extends (
 	}
 
 	unhold_purchase_order() {
-		this.frm.cscript.update_status("Resume", "Draft");
+		cur_frm.cscript.update_status("Resume", "Draft");
 	}
 
 	hold_purchase_order() {
@@ -740,15 +736,15 @@ erpnext.buying.PurchaseOrderController = class PurchaseOrderController extends (
 	}
 
 	unclose_purchase_order() {
-		this.frm.cscript.update_status("Re-open", "Submitted");
+		cur_frm.cscript.update_status("Re-open", "Submitted");
 	}
 
 	close_purchase_order() {
-		this.frm.cscript.update_status("Close", "Closed");
+		cur_frm.cscript.update_status("Close", "Closed");
 	}
 
 	delivered_by_supplier() {
-		this.frm.cscript.update_status("Deliver", "Delivered");
+		cur_frm.cscript.update_status("Deliver", "Delivered");
 	}
 
 	items_on_form_rendered() {

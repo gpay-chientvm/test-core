@@ -64,7 +64,7 @@
   }
  ],
  "links": [],
- "modified": "2024-03-27 13:09:54.784023",
+ "modified": "2020-04-07 20:25:55.507905",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Item Manufacturer",
@@ -108,9 +108,8 @@
   }
  ],
  "quick_entry": 1,
- "sort_field": "creation",
+ "sort_field": "modified",
  "sort_order": "ASC",
- "states": [],
  "title_field": "item_code",
  "track_changes": 1
 }

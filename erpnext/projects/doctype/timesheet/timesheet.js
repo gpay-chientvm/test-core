@@ -296,7 +296,6 @@ frappe.ui.form.on("Timesheet Detail", {
 
 	hours: function (frm, cdt, cdn) {
 		calculate_end_time(frm, cdt, cdn);
-		update_billing_hours(frm, cdt, cdn);
 		calculate_billing_costing_amount(frm, cdt, cdn);
 		calculate_time_and_amount(frm);
 	},
@@ -356,7 +355,7 @@ var calculate_end_time = function (frm, cdt, cdn) {
 	if (child.hours) {
 		d.add(child.hours, "hours");
 		frm._setting_hours = true;
-		frappe.model.set_value(cdt, cdn, "to_time", frappe.datetime.get_datetime_as_string(d)).then(() => {
+		frappe.model.set_value(cdt, cdn, "to_time", d.format(frappe.defaultDatetimeFormat)).then(() => {
 			frm._setting_hours = false;
 		});
 	}

@@ -195,7 +195,7 @@
   {
    "fieldname": "valid_upto",
    "fieldtype": "Date",
-   "label": "Valid Up To"
+   "label": "Valid Upto"
   },
   {
    "fieldname": "section_break_24",
@@ -259,7 +259,7 @@
   }
  ],
  "quick_entry": 1,
- "sort_field": "creation",
+ "sort_field": "modified",
  "sort_order": "ASC",
  "states": [],
  "title_field": "item_name",

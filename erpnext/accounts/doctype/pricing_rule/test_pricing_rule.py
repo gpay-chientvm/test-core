@@ -5,7 +5,7 @@
 import unittest
 
 import frappe
-from frappe.tests import IntegrationTestCase, UnitTestCase
+from frappe.tests.utils import FrappeTestCase, change_settings
 
 from erpnext.accounts.doctype.purchase_invoice.test_purchase_invoice import make_purchase_invoice
 from erpnext.accounts.doctype.sales_invoice.test_sales_invoice import create_sales_invoice
@@ -15,20 +15,10 @@ from erpnext.stock.doctype.item.test_item import make_item
 from erpnext.stock.get_item_details import get_item_details
 
 
-class UnitTestPricingRule(UnitTestCase):
-	"""
-	Unit tests for PricingRule.
-	Use this class for testing individual functions and methods.
-	"""
-
-	pass
-
-
-class TestPricingRule(IntegrationTestCase):
+class TestPricingRule(FrappeTestCase):
 	def setUp(self):
 		delete_existing_pricing_rules()
 		setup_pricing_rule_data()
-		self.enterClassContext(self.change_settings("Selling Settings", validate_selling_price=0))
 
 	def tearDown(self):
 		delete_existing_pricing_rules()
@@ -1481,7 +1471,7 @@ class TestPricingRule(IntegrationTestCase):
 		pi.cancel()
 
 
-EXTRA_TEST_RECORD_DEPENDENCIES = ["UTM Campaign"]
+test_dependencies = ["Campaign"]
 
 
 def make_pricing_rule(**args):
@@ -1542,9 +1532,9 @@ def make_pricing_rule(**args):
 
 
 def setup_pricing_rule_data():
-	if not frappe.db.exists("UTM Campaign", "_Test Campaign"):
+	if not frappe.db.exists("Campaign", "_Test Campaign"):
 		frappe.get_doc(
-			{"doctype": "UTM Campaign", "description": "_Test Campaign", "name": "_Test Campaign"}
+			{"doctype": "Campaign", "campaign_name": "_Test Campaign", "name": "_Test Campaign"}
 		).insert()
 
 

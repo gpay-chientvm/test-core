@@ -1,14 +1,14 @@
 # Copyright (c) 2021, Frappe Technologies Pvt. Ltd. and Contributors
 # See license.txt
+
 import unittest
 
 import frappe
-from frappe.tests import IntegrationTestCase
 
 from erpnext.stock.doctype.repost_item_valuation.repost_item_valuation import get_recipients
 
 
-class TestStockRepostingSettings(IntegrationTestCase):
+class TestStockRepostingSettings(unittest.TestCase):
 	def test_notify_reposting_error_to_role(self):
 		role = "Notify Reposting Role"
 

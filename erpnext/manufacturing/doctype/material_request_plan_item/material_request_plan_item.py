@@ -21,13 +21,7 @@ class MaterialRequestPlanItem(Document):
 		item_code: DF.Link
 		item_name: DF.Data | None
 		material_request_type: DF.Literal[
-			"",
-			"Purchase",
-			"Material Transfer",
-			"Material Issue",
-			"Manufacture",
-			"Subcontracting",
-			"Customer Provided",
+			"", "Purchase", "Material Transfer", "Material Issue", "Manufacture", "Customer Provided"
 		]
 		min_order_qty: DF.Float
 		ordered_qty: DF.Float

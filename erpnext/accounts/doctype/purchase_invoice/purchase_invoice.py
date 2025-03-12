@@ -77,7 +77,7 @@ class PurchaseInvoice(BuyingController):
 		)
 
 		additional_discount_percentage: DF.Float
-		address_display: DF.TextEditor | None
+		address_display: DF.SmallText | None
 		advance_tax: DF.Table[AdvanceTax]
 		advances: DF.Table[PurchaseInvoiceAdvance]
 		against_expense_account: DF.SmallText | None
@@ -102,7 +102,7 @@ class PurchaseInvoice(BuyingController):
 		bill_date: DF.Date | None
 		bill_no: DF.Data | None
 		billing_address: DF.Link | None
-		billing_address_display: DF.TextEditor | None
+		billing_address_display: DF.SmallText | None
 		buying_price_list: DF.Link | None
 		cash_bank_account: DF.Link | None
 		clearance_date: DF.Date | None
@@ -164,12 +164,11 @@ class PurchaseInvoice(BuyingController):
 		rounding_adjustment: DF.Currency
 		scan_barcode: DF.Data | None
 		select_print_heading: DF.Link | None
-		sender: DF.Data | None
 		set_from_warehouse: DF.Link | None
 		set_posting_time: DF.Check
 		set_warehouse: DF.Link | None
 		shipping_address: DF.Link | None
-		shipping_address_display: DF.TextEditor | None
+		shipping_address_display: DF.SmallText | None
 		shipping_rule: DF.Link | None
 		status: DF.Literal[
 			"",
@@ -188,7 +187,6 @@ class PurchaseInvoice(BuyingController):
 		supplied_items: DF.Table[PurchaseReceiptItemSupplied]
 		supplier: DF.Link
 		supplier_address: DF.Link | None
-		supplier_group: DF.Link | None
 		supplier_name: DF.Data | None
 		supplier_warehouse: DF.Link | None
 		tax_category: DF.Link | None
@@ -590,7 +588,7 @@ class PurchaseInvoice(BuyingController):
 
 	def validate_expense_account(self):
 		for item in self.get("items"):
-			validate_account_head(item.idx, item.expense_account, self.company, _("Expense"))
+			validate_account_head(item.idx, item.expense_account, self.company, "Expense")
 
 	def set_against_expense_account(self, force=False):
 		against_accounts = []
@@ -605,7 +603,7 @@ class PurchaseInvoice(BuyingController):
 		frappe.db.set_value(self.doctype, self.name, "against_expense_account", self.against_expense_account)
 
 	def po_required(self):
-		if frappe.db.get_single_value("Buying Settings", "po_required") == "Yes":
+		if frappe.db.get_value("Buying Settings", None, "po_required") == "Yes":
 			if frappe.get_value(
 				"Supplier", self.supplier, "allow_purchase_invoice_creation_without_purchase_order"
 			):
@@ -626,7 +624,7 @@ class PurchaseInvoice(BuyingController):
 
 	def pr_required(self):
 		stock_items = self.get_stock_items()
-		if frappe.db.get_single_value("Buying Settings", "pr_required") == "Yes":
+		if frappe.db.get_value("Buying Settings", None, "pr_required") == "Yes":
 			if frappe.get_value(
 				"Supplier", self.supplier, "allow_purchase_invoice_creation_without_purchase_receipt"
 			):
@@ -1188,7 +1186,7 @@ class PurchaseInvoice(BuyingController):
 						(item.purchase_receipt, valuation_tax_accounts),
 					)
 
-					(
+					stock_rbnb = (
 						self.get_company_default("asset_received_but_not_billed")
 						if item.is_fixed_asset
 						else self.stock_received_but_not_billed
@@ -1198,7 +1196,7 @@ class PurchaseInvoice(BuyingController):
 						gl_entries.append(
 							self.get_gl_dict(
 								{
-									"account": self.stock_received_but_not_billed,
+									"account": stock_rbnb,
 									"against": self.supplier,
 									"debit": flt(item.item_tax_amount, item.precision("item_tax_amount")),
 									"debit_in_transaction_currency": flt(
@@ -1226,7 +1224,7 @@ class PurchaseInvoice(BuyingController):
 		pr_items = frappe.get_all(
 			"Purchase Receipt Item",
 			filters={"parent": ("in", linked_purchase_receipts)},
-			fields=["name", "provisional_expense_account", "qty", "base_rate", "rate"],
+			fields=["name", "provisional_expense_account", "qty", "base_rate"],
 		)
 		default_provisional_account = self.get_company_default("default_provisional_account")
 		provisional_accounts = set(
@@ -1254,7 +1252,6 @@ class PurchaseInvoice(BuyingController):
 				"provisional_account": item.provisional_expense_account or default_provisional_account,
 				"qty": item.qty,
 				"base_rate": item.base_rate,
-				"rate": item.rate,
 				"has_provisional_entry": item.name in rows_with_provisional_entries,
 			}
 
@@ -1271,10 +1268,7 @@ class PurchaseInvoice(BuyingController):
 					self.posting_date,
 					pr_item.get("provisional_account"),
 					reverse=1,
-					item_amount=(
-						(min(item.qty, pr_item.get("qty")) * pr_item.get("rate"))
-						* purchase_receipt_doc.get("conversion_rate")
-					),
+					item_amount=(min(item.qty, pr_item.get("qty")) * pr_item.get("base_rate")),
 				)
 
 	def update_gross_purchase_amount_for_linked_assets(self, item):

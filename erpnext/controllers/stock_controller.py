@@ -851,9 +851,6 @@ class StockController(AccountsController):
 		self.update_inventory_dimensions(d, sl_dict)
 
 		if self.docstatus == 2:
-			from erpnext.deprecation_dumpster import deprecation_warning
-
-			deprecation_warning("unknown", "v16", "No instructions.")
 			# To handle denormalized serial no records, will br deprecated in v16
 			for field in ["serial_no", "batch_no"]:
 				if d.get(field):
@@ -1058,7 +1055,7 @@ class StockController(AccountsController):
 		action = frappe.db.get_single_value("Stock Settings", "action_if_quality_inspection_is_not_submitted")
 		qa_docstatus = frappe.db.get_value("Quality Inspection", row.quality_inspection, "docstatus")
 
-		if qa_docstatus != 1:
+		if not qa_docstatus == 1:
 			link = frappe.utils.get_link_to_form("Quality Inspection", row.quality_inspection)
 			msg = _("Row #{0}: Quality Inspection {1} is not submitted for the item: {2}").format(
 				row.idx, link, row.item_code
@@ -1590,7 +1587,7 @@ def check_item_quality_inspection(doctype, items):
 
 
 @frappe.whitelist()
-def make_quality_inspections(doctype, docname, items, inspection_type):
+def make_quality_inspections(doctype, docname, items):
 	if isinstance(items, str):
 		items = json.loads(items)
 
@@ -1610,7 +1607,7 @@ def make_quality_inspections(doctype, docname, items, inspection_type):
 		quality_inspection = frappe.get_doc(
 			{
 				"doctype": "Quality Inspection",
-				"inspection_type": inspection_type,
+				"inspection_type": "Incoming",
 				"inspected_by": frappe.session.user,
 				"reference_type": doctype,
 				"reference_name": docname,

@@ -2,7 +2,7 @@
 # For license information, please see license.txt
 
 
-from datetime import datetime, timezone
+from datetime import datetime
 
 import frappe
 from frappe import _
@@ -104,7 +104,7 @@ class ServiceLevelAgreement(Document):
 			priorities.append(priority.priority)
 
 		# Check if repeated priority
-		if len(set(priorities)) != len(priorities):
+		if not len(set(priorities)) == len(priorities):
 			repeated_priority = get_repeated(priorities)
 			frappe.throw(_("Priority {0} has been repeated.").format(repeated_priority))
 
@@ -132,7 +132,7 @@ class ServiceLevelAgreement(Document):
 				)
 
 		# Check for repeated workday
-		if len(set(support_days)) != len(support_days):
+		if not len(set(support_days)) == len(support_days):
 			repeated_days = get_repeated(support_days)
 			frappe.throw(_("Workday {0} has been repeated.").format(repeated_days))
 
@@ -747,13 +747,15 @@ def change_service_level_agreement_and_priority(self):
 		and frappe.db.exists("Issue", self.name)
 		and frappe.db.get_single_value("Support Settings", "track_service_level_agreement")
 	):
-		if self.priority != frappe.db.get_value("Issue", self.name, "priority"):
+		if not self.priority == frappe.db.get_value("Issue", self.name, "priority"):
 			self.set_response_and_resolution_time(
 				priority=self.priority, service_level_agreement=self.service_level_agreement
 			)
 			frappe.msgprint(_("Priority has been changed to {0}.").format(self.priority))
 
-		if self.service_level_agreement != frappe.db.get_value("Issue", self.name, "service_level_agreement"):
+		if not self.service_level_agreement == frappe.db.get_value(
+			"Issue", self.name, "service_level_agreement"
+		):
 			self.set_response_and_resolution_time(
 				priority=self.priority, service_level_agreement=self.service_level_agreement
 			)
@@ -1009,13 +1011,13 @@ def now_datetime(user):
 
 
 def convert_utc_to_user_timezone(utc_timestamp, user):
-	from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+	from pytz import UnknownTimeZoneError, timezone
 
 	user_tz = get_tz(user)
-	utcnow = utc_timestamp.replace(tzinfo=timezone.utc)
+	utcnow = timezone("UTC").localize(utc_timestamp)
 	try:
-		return utcnow.astimezone(ZoneInfo(user_tz))
-	except ZoneInfoNotFoundError:
+		return utcnow.astimezone(timezone(user_tz))
+	except UnknownTimeZoneError:
 		return utcnow
 
 

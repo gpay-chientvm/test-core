@@ -2,21 +2,12 @@
 # See license.txt
 
 import frappe
-from frappe.tests import IntegrationTestCase, UnitTestCase
+from frappe.tests.utils import FrappeTestCase
 
 from .quality_procedure import add_node
 
 
-class UnitTestQualityProcedure(UnitTestCase):
-	"""
-	Unit tests for QualityProcedure.
-	Use this class for testing individual functions and methods.
-	"""
-
-	pass
-
-
-class TestQualityProcedure(IntegrationTestCase):
+class TestQualityProcedure(FrappeTestCase):
 	def test_add_node(self):
 		procedure = create_procedure(
 			{

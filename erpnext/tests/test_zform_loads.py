@@ -2,12 +2,12 @@
 
 import frappe
 from frappe.desk.form.load import getdoc
-from frappe.tests import IntegrationTestCase
+from frappe.tests.utils import FrappeTestCase, change_settings
 from frappe.www.printview import get_html_and_style
 
 
-class TestFormLoads(IntegrationTestCase):
-	@IntegrationTestCase.change_settings("Print Settings", {"allow_print_for_cancelled": 1})
+class TestFormLoads(FrappeTestCase):
+	@change_settings("Print Settings", {"allow_print_for_cancelled": 1})
 	def test_load(self):
 		erpnext_modules = frappe.get_all("Module Def", filters={"app_name": "erpnext"}, pluck="name")
 		doctypes = frappe.get_all(
@@ -17,7 +17,7 @@ class TestFormLoads(IntegrationTestCase):
 		)
 
 		for doctype in doctypes:
-			last_doc = frappe.db.get_value(doctype, {}, "name", order_by="creation desc")
+			last_doc = frappe.db.get_value(doctype, {}, "name", order_by="modified desc")
 			if not last_doc:
 				continue
 			with self.subTest(msg=f"Loading {doctype} - {last_doc}", doctype=doctype, last_doc=last_doc):

@@ -2,11 +2,11 @@
 # See license.txt
 
 import frappe
-from frappe.tests import IntegrationTestCase, UnitTestCase
+from frappe.tests.utils import FrappeTestCase
 
 from erpnext.controllers.queries import item_query
 
-EXTRA_TEST_RECORD_DEPENDENCIES = ["Item", "Customer", "Supplier"]
+test_dependencies = ["Item", "Customer", "Supplier"]
 
 
 def create_party_specific_item(**args):
@@ -18,16 +18,7 @@ def create_party_specific_item(**args):
 	psi.insert()
 
 
-class UnitTestPartySpecificItem(UnitTestCase):
-	"""
-	Unit tests for PartySpecificItem.
-	Use this class for testing individual functions and methods.
-	"""
-
-	pass
-
-
-class TestPartySpecificItem(IntegrationTestCase):
+class TestPartySpecificItem(FrappeTestCase):
 	def setUp(self):
 		self.customer = frappe.get_last_doc("Customer")
 		self.supplier = frappe.get_last_doc("Supplier")

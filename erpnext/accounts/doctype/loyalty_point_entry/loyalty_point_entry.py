@@ -18,16 +18,15 @@ class LoyaltyPointEntry(Document):
 	if TYPE_CHECKING:
 		from frappe.types import DF
 
-		company: DF.Link
-		customer: DF.Link
-		discretionary_reason: DF.Data | None
-		expiry_date: DF.Date
+		company: DF.Link | None
+		customer: DF.Link | None
+		expiry_date: DF.Date | None
 		invoice: DF.DynamicLink | None
-		invoice_type: DF.Link
+		invoice_type: DF.Link | None
 		loyalty_points: DF.Int
-		loyalty_program: DF.Link
+		loyalty_program: DF.Link | None
 		loyalty_program_tier: DF.Data | None
-		posting_date: DF.Date
+		posting_date: DF.Date | None
 		purchase_amount: DF.Currency
 		redeem_against: DF.Link | None
 	# end: auto-generated types

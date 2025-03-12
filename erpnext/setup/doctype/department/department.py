@@ -2,8 +2,6 @@
 # License: GNU General Public License v3. See license.txt
 
 
-import json
-
 import frappe
 from frappe.utils.nestedset import NestedSet, get_root_of
 
@@ -71,9 +69,7 @@ def get_abbreviated_name(name, company):
 
 
 @frappe.whitelist()
-def get_children(doctype, parent=None, company=None, is_root=False, include_disabled=False):
-	if isinstance(include_disabled, str):
-		include_disabled = json.loads(include_disabled)
+def get_children(doctype, parent=None, company=None, is_root=False):
 	fields = ["name as value", "is_group as expandable"]
 	filters = {}
 
@@ -84,9 +80,6 @@ def get_children(doctype, parent=None, company=None, is_root=False, include_disa
 		filters["company"] = company
 	else:
 		filters["parent_department"] = parent
-
-	if frappe.db.has_column(doctype, "disabled") and not include_disabled:
-		filters["disabled"] = False
 
 	return frappe.get_all("Department", fields=fields, filters=filters, order_by="name")
 

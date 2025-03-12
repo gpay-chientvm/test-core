@@ -384,7 +384,7 @@
    "role": "Accounts Manager"
   }
  ],
- "sort_field": "creation",
+ "sort_field": "modified",
  "sort_order": "DESC",
  "states": []
 }

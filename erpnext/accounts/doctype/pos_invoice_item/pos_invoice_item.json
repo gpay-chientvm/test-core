@@ -37,7 +37,6 @@
   "column_break_19",
   "discount_percentage",
   "discount_amount",
-  "distributed_discount_amount",
   "base_rate_with_margin",
   "section_break1",
   "rate",
@@ -848,12 +847,6 @@
   {
    "fieldname": "column_break_ciit",
    "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "distributed_discount_amount",
-   "fieldtype": "Currency",
-   "label": "Distributed Discount Amount",
-   "options": "currency"
   }
  ],
  "istable": 1,
@@ -865,7 +858,7 @@
  "naming_rule": "Random",
  "owner": "Administrator",
  "permissions": [],
- "sort_field": "creation",
+ "sort_field": "modified",
  "sort_order": "DESC",
  "states": []
 }

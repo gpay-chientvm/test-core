@@ -1,14 +1,11 @@
 import unittest
 
 import frappe
-from frappe.tests import IntegrationTestCase
 
 from erpnext.tests.utils import ReportFilters, ReportName, execute_script_report
 
-EXTRA_TEST_RECORD_DEPENDENCIES = ["BOM", "Item Price", "Warehouse"]
 
-
-class TestManufacturingReports(IntegrationTestCase):
+class TestManufacturingReports(unittest.TestCase):
 	def setUp(self):
 		self.setup_default_filters()
 

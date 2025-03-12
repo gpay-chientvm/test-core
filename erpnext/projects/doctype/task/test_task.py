@@ -1,15 +1,15 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
+
 import unittest
 
 import frappe
-from frappe.tests import IntegrationTestCase
 from frappe.utils import add_days, getdate, nowdate
 
 from erpnext.projects.doctype.task.task import CircularReferenceError
 
 
-class TestTask(IntegrationTestCase):
+class TestTask(unittest.TestCase):
 	def test_circular_reference(self):
 		task1 = create_task("_Test Task 1", add_days(nowdate(), -15), add_days(nowdate(), -10))
 		task2 = create_task("_Test Task 2", add_days(nowdate(), 11), add_days(nowdate(), 15), task1.name)
@@ -44,21 +44,17 @@ class TestTask(IntegrationTestCase):
 		task1.save()
 
 		self.assertEqual(
-			getdate(frappe.db.get_value("Task", task2.name, "exp_start_date")),
-			getdate(add_days(nowdate(), 21)),
+			frappe.db.get_value("Task", task2.name, "exp_start_date"), getdate(add_days(nowdate(), 21))
+		)
+		self.assertEqual(
+			frappe.db.get_value("Task", task2.name, "exp_end_date"), getdate(add_days(nowdate(), 25))
 		)
 
 		self.assertEqual(
-			getdate(frappe.db.get_value("Task", task2.name, "exp_end_date")), getdate(add_days(nowdate(), 25))
+			frappe.db.get_value("Task", task3.name, "exp_start_date"), getdate(add_days(nowdate(), 26))
 		)
-
 		self.assertEqual(
-			getdate(frappe.db.get_value("Task", task3.name, "exp_start_date")),
-			getdate(add_days(nowdate(), 26)),
-		)
-
-		self.assertEqual(
-			getdate(frappe.db.get_value("Task", task3.name, "exp_end_date")), getdate(add_days(nowdate(), 30))
+			frappe.db.get_value("Task", task3.name, "exp_end_date"), getdate(add_days(nowdate(), 30))
 		)
 
 	def test_close_assignment(self):

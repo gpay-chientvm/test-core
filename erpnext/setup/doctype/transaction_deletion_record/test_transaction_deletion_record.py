@@ -3,19 +3,10 @@
 
 
 import frappe
-from frappe.tests import IntegrationTestCase, UnitTestCase
+from frappe.tests.utils import FrappeTestCase
 
 
-class UnitTestTransactionDeletionRecord(UnitTestCase):
-	"""
-	Unit tests for TransactionDeletionRecord.
-	Use this class for testing individual functions and methods.
-	"""
-
-	pass
-
-
-class TestTransactionDeletionRecord(IntegrationTestCase):
+class TestTransactionDeletionRecord(FrappeTestCase):
 	def setUp(self):
 		create_company("Dunder Mifflin Paper Co")
 

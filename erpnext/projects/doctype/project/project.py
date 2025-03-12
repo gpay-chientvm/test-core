@@ -357,7 +357,7 @@ class Project(Document):
 		url = get_link_to_form(self.doctype, self.name, label)
 
 		content = "<p>{}</p>".format(
-			_("You have been invited to collaborate on the project {0}.").format(url)
+			_("You have been invited to collaborate on the project: {0}").format(url)
 		)
 
 		for user in self.users:
@@ -386,7 +386,7 @@ def get_timeline_data(doctype: str, name: str) -> dict[int, int]:
 	)
 
 
-def get_project_list(doctype, txt, filters, limit_start, limit_page_length=20, order_by="creation"):
+def get_project_list(doctype, txt, filters, limit_start, limit_page_length=20, order_by="modified"):
 	customers, suppliers = get_customers_suppliers("Project", frappe.session.user)
 
 	ignore_permissions = False

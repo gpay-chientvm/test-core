@@ -1,9 +1,8 @@
 # Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
 # See license.txt
+
 import unittest
 
-from frappe.tests import IntegrationTestCase
 
-
-class TestSalesPartnerType(IntegrationTestCase):
+class TestSalesPartnerType(unittest.TestCase):
 	pass

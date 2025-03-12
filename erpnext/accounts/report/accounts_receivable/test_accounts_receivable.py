@@ -1,6 +1,6 @@
 import frappe
 from frappe import qb
-from frappe.tests import IntegrationTestCase
+from frappe.tests.utils import FrappeTestCase, change_settings
 from frappe.utils import add_days, flt, getdate, today
 
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
@@ -10,7 +10,7 @@ from erpnext.accounts.test.accounts_mixin import AccountsTestMixin
 from erpnext.selling.doctype.sales_order.test_sales_order import make_sales_order
 
 
-class TestAccountsReceivable(AccountsTestMixin, IntegrationTestCase):
+class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 	def setUp(self):
 		self.create_company()
 		self.create_customer()
@@ -204,7 +204,7 @@ class TestAccountsReceivable(AccountsTestMixin, IntegrationTestCase):
 
 		expected_data_after_credit_note = [
 			[100.0, 100.0, 40.0, 0.0, 60.0, si.name],
-			[0, 0, 100.0, 0.0, -100.0, cr_note.name],
+			[0, 0, 0, 100.0, -100.0, cr_note.name],
 		]
 		self.assertEqual(len(report[1]), 2)
 		si_row = next(
@@ -275,7 +275,7 @@ class TestAccountsReceivable(AccountsTestMixin, IntegrationTestCase):
 			],
 		)
 
-	@IntegrationTestCase.change_settings(
+	@change_settings(
 		"Accounts Settings",
 		{"allow_multi_currency_invoices_against_single_party_account": 1, "allow_stale": 0},
 	)
@@ -478,13 +478,19 @@ class TestAccountsReceivable(AccountsTestMixin, IntegrationTestCase):
 		report = execute(filters)[1]
 		self.assertEqual(len(report), 2)
 
-		expected_data = {sr.name: [10.0, -10.0, 0.0, -10], si.name: [100.0, 100.0, 10.0, 90.0]}
+		expected_data = {sr.name: [0.0, 10.0, -10.0, 0.0, -10], si.name: [100.0, 0.0, 100.0, 10.0, 90.0]}
 
 		rows = report[:2]
 		for row in rows:
 			self.assertEqual(
 				expected_data[row.voucher_no],
-				[row.invoiced or row.paid, row.outstanding, row.remaining_balance, row.future_amount],
+				[
+					row.invoiced or row.paid,
+					row.credit_note,
+					row.outstanding,
+					row.remaining_balance,
+					row.future_amount,
+				],
 			)
 
 		pe.cancel()

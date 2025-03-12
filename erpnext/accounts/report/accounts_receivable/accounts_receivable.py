@@ -58,7 +58,7 @@ class ReceivablePayableReport:
 	def run(self, args):
 		self.filters.update(args)
 		self.set_defaults()
-		self.party_naming_by = frappe.db.get_single_value(args.get("naming_by")[0], args.get("naming_by")[1])
+		self.party_naming_by = frappe.db.get_value(args.get("naming_by")[0], None, args.get("naming_by")[1])
 		self.get_columns()
 		self.get_data()
 		self.get_chart_data()
@@ -267,6 +267,18 @@ class ReceivablePayableReport:
 				row.invoiced_in_account_currency += amount_in_account_currency
 		else:
 			if self.is_invoice(ple):
+				# when invoice has is_return marked
+				if self.invoice_details.get(row.voucher_no, {}).get("is_return"):
+					# for Credit Note
+					if row.voucher_type == "Sales Invoice":
+						row.credit_note -= amount
+						row.credit_note_in_account_currency -= amount_in_account_currency
+					# for Debit Note
+					else:
+						row.invoiced -= amount
+						row.invoiced_in_account_currency -= amount_in_account_currency
+					return
+
 				if row.voucher_no == ple.voucher_no == ple.against_voucher_no:
 					row.paid -= amount
 					row.paid_in_account_currency -= amount_in_account_currency
@@ -421,7 +433,7 @@ class ReceivablePayableReport:
 			# nosemgrep
 			si_list = frappe.db.sql(
 				"""
-				select name, due_date, po_no
+				select name, due_date, po_no, is_return
 				from `tabSales Invoice`
 				where posting_date <= %s
 					and company = %s
@@ -453,7 +465,7 @@ class ReceivablePayableReport:
 			# nosemgrep
 			for pi in frappe.db.sql(
 				"""
-				select name, due_date, bill_no, bill_date
+				select name, due_date, bill_no, bill_date, is_return
 				from `tabPurchase Invoice`
 				where
 					posting_date <= %s

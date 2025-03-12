@@ -10,7 +10,6 @@ from frappe import _, bold, scrub
 from frappe.model.meta import get_field_precision
 from frappe.query_builder.functions import Sum
 from frappe.utils import (
-	add_to_date,
 	cint,
 	cstr,
 	flt,
@@ -1540,7 +1539,7 @@ class update_entries_after:
 							msg, frappe.bold(self.reserved_stock), frappe.bold(allowed_qty)
 						)
 					else:
-						msg = f"{msg} As the full stock is reserved for other transactions, you're not allowed to consume the stock."
+						msg = f"{msg} As the full stock is reserved for other sales orders, you're not allowed to consume the stock."
 
 				msg_list.append(msg)
 
@@ -1861,7 +1860,7 @@ def get_valuation_rate(
 		solutions += (
 			"<li>"
 			+ _("If not, you can Cancel / Submit this entry")
-			+ " {} ".format(frappe.bold(_("after")))
+			+ " {} ".format(frappe.bold("after"))
 			+ _("performing either one below:")
 			+ "</li>"
 		)

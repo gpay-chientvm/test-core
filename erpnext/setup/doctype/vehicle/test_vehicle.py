@@ -1,13 +1,15 @@
 # Copyright (c) 2015, Frappe Technologies Pvt. Ltd. and Contributors
 # See license.txt
+
 import unittest
 
 import frappe
-from frappe.tests import IntegrationTestCase
 from frappe.utils import random_string
 
+# test_records = frappe.get_test_records('Vehicle')
 
-class TestVehicle(IntegrationTestCase):
+
+class TestVehicle(unittest.TestCase):
 	def test_make_vehicle(self):
 		vehicle = frappe.get_doc(
 			{

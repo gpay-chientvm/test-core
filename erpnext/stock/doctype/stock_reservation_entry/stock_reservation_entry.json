@@ -8,31 +8,26 @@
  "editable_grid": 1,
  "engine": "InnoDB",
  "field_order": [
-  "section_break_xt4m",
+  "item_code",
+  "warehouse",
+  "has_serial_no",
+  "has_batch_no",
+  "column_break_elik",
   "voucher_type",
   "voucher_no",
   "voucher_detail_no",
-  "column_break_grdt",
-  "voucher_qty",
-  "available_qty",
-  "column_break_o6ex",
-  "reserved_qty",
-  "delivered_qty",
-  "item_information_section",
-  "item_code",
-  "warehouse",
-  "column_break_elik",
-  "stock_uom",
-  "has_serial_no",
-  "has_batch_no",
   "column_break_7dxj",
   "from_voucher_type",
   "from_voucher_no",
   "from_voucher_detail_no",
-  "production_section",
-  "transferred_qty",
-  "column_break_qdwj",
-  "consumed_qty",
+  "section_break_xt4m",
+  "stock_uom",
+  "column_break_grdt",
+  "available_qty",
+  "voucher_qty",
+  "column_break_o6ex",
+  "reserved_qty",
+  "delivered_qty",
   "serial_and_batch_reservation_section",
   "reservation_based_on",
   "sb_entries",
@@ -84,7 +79,7 @@
    "no_copy": 1,
    "oldfieldname": "voucher_type",
    "oldfieldtype": "Data",
-   "options": "\nSales Order\nWork Order",
+   "options": "\nSales Order",
    "print_width": "150px",
    "read_only": 1,
    "width": "150px"
@@ -218,16 +213,16 @@
   },
   {
    "fieldname": "section_break_xt4m",
-   "fieldtype": "Section Break",
-   "label": "Transaction Information"
+   "fieldtype": "Section Break"
   },
   {
    "fieldname": "column_break_o6ex",
    "fieldtype": "Column Break"
   },
   {
+   "collapsible": 1,
    "fieldname": "section_break_3vb3",
-   "fieldtype": "Tab Break",
+   "fieldtype": "Section Break",
    "label": "More Information"
   },
   {
@@ -262,7 +257,7 @@
   },
   {
    "fieldname": "serial_and_batch_reservation_section",
-   "fieldtype": "Tab Break",
+   "fieldtype": "Section Break",
    "label": "Serial and Batch Reservation"
   },
   {
@@ -289,7 +284,7 @@
    "fieldtype": "Select",
    "label": "From Voucher Type",
    "no_copy": 1,
-   "options": "\nPick List\nPurchase Receipt\nStock Entry\nWork Order",
+   "options": "\nPick List\nPurchase Receipt",
    "print_hide": 1,
    "read_only": 1,
    "report_hide": 1
@@ -313,30 +308,6 @@
    "read_only": 1,
    "report_hide": 1,
    "search_index": 1
-  },
-  {
-   "fieldname": "production_section",
-   "fieldtype": "Section Break",
-   "label": "Production"
-  },
-  {
-   "fieldname": "column_break_qdwj",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "consumed_qty",
-   "fieldtype": "Float",
-   "label": "Consumed Qty"
-  },
-  {
-   "fieldname": "item_information_section",
-   "fieldtype": "Section Break",
-   "label": "Item Information"
-  },
-  {
-   "fieldname": "transferred_qty",
-   "fieldtype": "Float",
-   "label": "Qty in WIP Warehouse"
   }
  ],
  "hide_toolbar": 1,
@@ -344,7 +315,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-09-19 15:28:24.726283",
+ "modified": "2024-02-07 16:05:17.772098",
  "modified_by": "Administrator",
  "module": "Stock",
  "name": "Stock Reservation Entry",
@@ -450,7 +421,7 @@
    "write": 1
   }
  ],
- "sort_field": "creation",
+ "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
  "track_changes": 1

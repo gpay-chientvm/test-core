@@ -1,13 +1,14 @@
 # Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
 # See license.txt
+
 import unittest
 
 import frappe
-from frappe.tests import IntegrationTestCase
 
 
-class TestProjectUpdate(IntegrationTestCase):
+class TestProjectUpdate(unittest.TestCase):
 	pass
 
 
-IGNORE_TEST_RECORD_DEPENDENCIES = ["Sales Order"]
+test_records = frappe.get_test_records("Project Update")
+test_ignore = ["Sales Order"]

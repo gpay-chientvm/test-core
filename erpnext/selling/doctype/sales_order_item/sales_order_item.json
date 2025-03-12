@@ -40,7 +40,6 @@
   "column_break_19",
   "discount_percentage",
   "discount_amount",
-  "distributed_discount_amount",
   "base_rate_with_margin",
   "section_break_simple1",
   "rate",
@@ -288,7 +287,7 @@
   },
   {
    "collapsible": 1,
-   "collapsible_depends_on": "eval: doc.margin_type || doc.discount_amount || doc.distributed_discount_amount",
+   "collapsible_depends_on": "eval: doc.margin_type || doc.discount_amount",
    "fieldname": "discount_and_margin",
    "fieldtype": "Section Break",
    "label": "Discount and Margin"
@@ -523,6 +522,7 @@
    "depends_on": "eval:doc.delivered_by_supplier!=1",
    "fieldname": "warehouse",
    "fieldtype": "Link",
+   "in_list_view": 1,
    "label": "Delivery Warehouse",
    "oldfieldname": "reserved_warehouse",
    "oldfieldtype": "Link",
@@ -914,12 +914,6 @@
    "report_hide": 1
   },
   {
-   "fieldname": "distributed_discount_amount",
-   "fieldtype": "Currency",
-   "label": "Distributed Discount Amount",
-   "options": "currency"
-  },
-  {
    "allow_on_submit": 1,
    "fieldname": "company_total_stock",
    "fieldtype": "Float",
@@ -977,7 +971,7 @@
  "naming_rule": "Random",
  "owner": "Administrator",
  "permissions": [],
- "sort_field": "creation",
+ "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
  "track_changes": 1

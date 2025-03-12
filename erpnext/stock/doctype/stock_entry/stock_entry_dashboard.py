@@ -6,7 +6,7 @@ def get_data():
 	return {
 		"fieldname": "stock_entry",
 		"non_standard_fieldnames": {
-			"Stock Reservation Entry": "from_voucher_no",
+			# "DocType Name": "Reference field name",
 		},
 		"internal_links": {
 			"Purchase Order": ["items", "purchase_order"],
@@ -22,6 +22,5 @@ def get_data():
 					"Subcontracting Receipt",
 				],
 			},
-			{"label": _("Stock Reservation"), "items": ["Stock Reservation Entry"]},
 		],
 	}

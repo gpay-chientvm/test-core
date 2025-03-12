@@ -5,7 +5,6 @@
  "creation": "2013-05-21 16:16:39",
  "doctype": "DocType",
  "document_type": "Document",
- "email_append_to": 1,
  "engine": "InnoDB",
  "field_order": [
   "title",
@@ -193,7 +192,6 @@
   "is_internal_supplier",
   "represents_company",
   "supplier_group",
-  "sender",
   "column_break_147",
   "inter_company_invoice_reference",
   "is_old_subcontracting_flow",
@@ -446,7 +444,7 @@
   },
   {
    "fieldname": "address_display",
-   "fieldtype": "Text Editor",
+   "fieldtype": "Small Text",
    "label": "Address",
    "read_only": 1
   },
@@ -492,7 +490,7 @@
   },
   {
    "fieldname": "shipping_address_display",
-   "fieldtype": "Text Editor",
+   "fieldtype": "Small Text",
    "label": "Shipping Address",
    "print_hide": 1,
    "read_only": 1
@@ -1368,7 +1366,7 @@
   },
   {
    "fieldname": "billing_address_display",
-   "fieldtype": "Text Editor",
+   "fieldtype": "Small Text",
    "label": "Billing Address",
    "read_only": 1
   },
@@ -1629,12 +1627,6 @@
    "fieldname": "update_outstanding_for_self",
    "fieldtype": "Check",
    "label": "Update Outstanding for Self"
-  },
-  {
-   "fieldname": "sender",
-   "fieldtype": "Data",
-   "label": "Sender",
-   "options": "Email"
   }
  ],
  "icon": "fa fa-file-text",
@@ -1697,9 +1689,8 @@
   }
  ],
  "search_fields": "posting_date, supplier, bill_no, base_grand_total, outstanding_amount",
- "sender_field": "sender",
  "show_name_in_global_search": 1,
- "sort_field": "creation",
+ "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
  "timeline_field": "supplier",

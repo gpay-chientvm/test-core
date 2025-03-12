@@ -3,7 +3,6 @@
  "allow_copy": 1,
  "allow_import": 1,
  "creation": "2013-01-30 12:49:46",
- "default_view": "Tree",
  "description": "Heads (or groups) against which Accounting Entries are made and balances are maintained.",
  "doctype": "DocType",
  "document_type": "Setup",
@@ -65,8 +64,6 @@
    "label": "Is Group"
   },
   {
-   "fetch_from": "parent_account.company",
-   "fetch_if_empty": 1,
    "fieldname": "company",
    "fieldtype": "Link",
    "in_standard_filter": 1,
@@ -109,7 +106,6 @@
    "fieldname": "parent_account",
    "fieldtype": "Link",
    "ignore_user_permissions": 1,
-   "in_preview": 1,
    "label": "Parent Account",
    "oldfieldname": "parent_account",
    "oldfieldtype": "Link",
@@ -195,7 +191,7 @@
  "idx": 1,
  "is_tree": 1,
  "links": [],
- "modified": "2025-01-22 10:40:35.766017",
+ "modified": "2024-08-19 15:19:11.095045",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Account",
@@ -252,8 +248,7 @@
  ],
  "search_fields": "account_number",
  "show_name_in_global_search": 1,
- "show_preview_popup": 1,
- "sort_field": "creation",
+ "sort_field": "modified",
  "sort_order": "ASC",
  "states": [],
  "track_changes": 1

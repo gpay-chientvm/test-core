@@ -40,7 +40,6 @@ from erpnext.stock.doctype.stock_reconciliation.stock_reconciliation import (
 	OpeningEntryAccountError,
 )
 from erpnext.stock.get_item_details import (
-	ItemDetailsCtx,
 	get_barcode_data,
 	get_bin_details,
 	get_conversion_factor,
@@ -96,7 +95,7 @@ class StockEntry(StockController):
 
 		add_to_transit: DF.Check
 		additional_costs: DF.Table[LandedCostTaxesandCharges]
-		address_display: DF.TextEditor | None
+		address_display: DF.SmallText | None
 		amended_from: DF.Link | None
 		apply_putaway_rule: DF.Check
 		asset_repair: DF.Link | None
@@ -140,14 +139,14 @@ class StockEntry(StockController):
 		scan_barcode: DF.Data | None
 		select_print_heading: DF.Link | None
 		set_posting_time: DF.Check
-		source_address_display: DF.TextEditor | None
+		source_address_display: DF.SmallText | None
 		source_warehouse_address: DF.Link | None
 		stock_entry_type: DF.Link
 		subcontracting_order: DF.Link | None
 		supplier: DF.Link | None
 		supplier_address: DF.Link | None
 		supplier_name: DF.Data | None
-		target_address_display: DF.TextEditor | None
+		target_address_display: DF.SmallText | None
 		target_warehouse_address: DF.Link | None
 		to_warehouse: DF.Link | None
 		total_additional_costs: DF.Currency
@@ -214,10 +213,7 @@ class StockEntry(StockController):
 
 		if self.purpose in ("Manufacture", "Repack"):
 			self.mark_finished_and_scrap_items()
-			if not self.job_card:
-				self.validate_finished_goods()
-			else:
-				self.validate_job_card_fg_item()
+			self.validate_finished_goods()
 
 		self.validate_with_material_request()
 		self.validate_batch()
@@ -238,7 +234,7 @@ class StockEntry(StockController):
 		self.validate_putaway_capacity()
 		self.validate_component_and_quantities()
 
-		if self.get("purpose") != "Manufacture":
+		if not self.get("purpose") == "Manufacture":
 			# ignore scrap item wh difference and empty source/target wh
 			# in Manufacture Entry
 			self.reset_default_field_value("from_warehouse", "items", "s_warehouse")
@@ -247,10 +243,8 @@ class StockEntry(StockController):
 	def on_submit(self):
 		self.validate_closed_subcontracting_order()
 		self.make_bundle_using_old_serial_batch_fields()
-		self.update_work_order()
 		self.update_stock_ledger()
-		self.make_stock_reserve_for_wip_and_fg()
-
+		self.update_work_order()
 		self.validate_subcontract_order()
 		self.update_subcontract_order_supplied_items()
 		self.update_subcontracting_order_status()
@@ -272,7 +266,6 @@ class StockEntry(StockController):
 		self.validate_closed_subcontracting_order()
 		self.update_subcontract_order_supplied_items()
 		self.update_subcontracting_order_status()
-		self.cancel_stock_reserve_for_wip_and_fg()
 
 		if self.work_order and self.purpose == "Material Consumption for Manufacture":
 			self.validate_work_order_status()
@@ -313,22 +306,8 @@ class StockEntry(StockController):
 			self.from_bom = 1
 			self.bom_no = data.bom_no
 
-	def validate_job_card_fg_item(self):
-		if not self.job_card:
-			return
-
-		job_card = frappe.db.get_value(
-			"Job Card", self.job_card, ["finished_good", "manufactured_qty"], as_dict=1
-		)
-
-		for row in self.items:
-			if row.is_finished_item and row.item_code != job_card.finished_good:
-				frappe.throw(
-					_("Row #{0}: Finished Good must be {1}").format(row.idx, job_card.fininshed_good)
-				)
-
 	def validate_job_card_item(self):
-		if not self.job_card or self.purpose == "Manufacture":
+		if not self.job_card:
 			return
 
 		if cint(frappe.db.get_single_value("Manufacturing Settings", "job_card_excess_transfer")):
@@ -366,6 +345,13 @@ class StockEntry(StockController):
 		if self.purpose not in valid_purposes:
 			frappe.throw(_("Purpose must be one of {0}").format(comma_or(valid_purposes)))
 
+		if self.job_card and self.purpose not in ["Material Transfer for Manufacture", "Repack"]:
+			frappe.throw(
+				_(
+					"For job card {0}, you can only make the 'Material Transfer for Manufacture' type stock entry"
+				).format(self.job_card)
+			)
+
 	def delete_linked_stock_entry(self):
 		if self.purpose == "Send to Warehouse":
 			for d in frappe.get_all(
@@ -379,8 +365,9 @@ class StockEntry(StockController):
 				frappe.delete_doc("Stock Entry", d.name)
 
 	def set_transfer_qty(self):
-		self.validate_qty_is_not_zero()
 		for item in self.get("items"):
+			if not flt(item.qty):
+				frappe.throw(_("Row {0}: Qty is mandatory").format(item.idx), title=_("Zero quantity"))
 			if not flt(item.conversion_factor):
 				frappe.throw(_("Row {0}: UOM Conversion Factor is mandatory").format(item.idx))
 			item.transfer_qty = flt(
@@ -477,37 +464,31 @@ class StockEntry(StockController):
 				)
 
 	def validate_fg_completed_qty(self):
-		if self.purpose != "Manufacture":
-			return
+		item_wise_qty = {}
+		if self.purpose == "Manufacture" and self.work_order:
+			for d in self.items:
+				if d.is_finished_item:
+					if self.process_loss_qty:
+						d.qty = self.fg_completed_qty - self.process_loss_qty
 
-		fg_qty = defaultdict(float)
-		for d in self.items:
-			if d.is_finished_item:
-				fg_qty[d.item_code] += flt(d.qty)
-
-		if not fg_qty:
-			return
+					item_wise_qty.setdefault(d.item_code, []).append(d.qty)
 
 		precision = frappe.get_precision("Stock Entry Detail", "qty")
-		fg_item = next(iter(fg_qty.keys()))
-		fg_item_qty = flt(fg_qty[fg_item], precision)
-		fg_completed_qty = flt(self.fg_completed_qty, precision)
+		for item_code, qty_list in item_wise_qty.items():
+			total = flt(sum(qty_list), precision)
 
-		for d in self.items:
-			if not fg_qty.get(d.item_code):
-				continue
+			if (self.fg_completed_qty - total) > 0 and not self.process_loss_qty:
+				self.process_loss_qty = flt(self.fg_completed_qty - total, precision)
+				self.process_loss_percentage = flt(self.process_loss_qty * 100 / self.fg_completed_qty)
 
-			if (fg_completed_qty - fg_item_qty) > 0:
-				self.process_loss_qty = fg_completed_qty - fg_item_qty
+			if self.process_loss_qty:
+				total += flt(self.process_loss_qty, precision)
 
-			if not self.process_loss_qty:
-				continue
-
-			if fg_completed_qty != (flt(fg_item_qty, precision) + flt(self.process_loss_qty, precision)):
+			if self.fg_completed_qty != flt(total, precision):
 				frappe.throw(
 					_(
-						"Since there is a process loss of {0} units for the finished good {1}, you should reduce the quantity by {0} units for the finished good {1} in the Items Table."
-					).format(frappe.bold(self.process_loss_qty), frappe.bold(d.item_code))
+						"The finished product {0} quantity {1} and For Quantity {2} cannot be different"
+					).format(frappe.bold(item_code), frappe.bold(total), frappe.bold(self.fg_completed_qty))
 				)
 
 	def validate_difference_account(self):
@@ -597,7 +578,7 @@ class StockEntry(StockController):
 				frappe.throw(_("Source and target warehouse cannot be same for row {0}").format(d.idx))
 
 			if not (d.s_warehouse or d.t_warehouse):
-				frappe.throw(_("At least one warehouse is mandatory"))
+				frappe.throw(_("Atleast one warehouse is mandatory"))
 
 	def validate_work_order(self):
 		if self.purpose in (
@@ -609,10 +590,8 @@ class StockEntry(StockController):
 			# check if work order is entered
 
 			if (
-				(self.purpose == "Manufacture" or self.purpose == "Material Consumption for Manufacture")
-				and self.work_order
-				and frappe.get_cached_value("Work Order", self.work_order, "track_semi_finished_goods") != 1
-			):
+				self.purpose == "Manufacture" or self.purpose == "Material Consumption for Manufacture"
+			) and self.work_order:
 				if not self.fg_completed_qty:
 					frappe.throw(_("For Quantity (Manufactured Qty) is mandatory"))
 				self.check_if_operations_completed()
@@ -1596,14 +1575,8 @@ class StockEntry(StockController):
 
 		if self.job_card:
 			job_doc = frappe.get_doc("Job Card", self.job_card)
-			if self.purpose != "Manufacture":
-				job_doc.set_transferred_qty(update_status=True)
-				job_doc.set_transferred_qty_in_job_card_item(self)
-			else:
-				job_doc.set_manufactured_qty()
-
-		if self.job_card and frappe.get_cached_value("Job Card", self.job_card, "finished_good"):
-			return
+			job_doc.set_transferred_qty(update_status=True)
+			job_doc.set_transferred_qty_in_job_card_item(self)
 
 		if self.work_order:
 			pro_doc = frappe.get_doc("Work Order", self.work_order)
@@ -1618,66 +1591,19 @@ class StockEntry(StockController):
 			if not pro_doc.operations:
 				pro_doc.set_actual_dates()
 
-	def make_stock_reserve_for_wip_and_fg(self):
-		if self.is_stock_reserve_for_work_order():
-			pro_doc = frappe.get_doc("Work Order", self.work_order)
-			if self.purpose == "Manufacture" and not pro_doc.sales_order:
-				return
-
-			pro_doc.set_reserved_qty_for_wip_and_fg(self)
-
-	def cancel_stock_reserve_for_wip_and_fg(self):
-		if self.is_stock_reserve_for_work_order():
-			pro_doc = frappe.get_doc("Work Order", self.work_order)
-			if self.purpose == "Manufacture" and not pro_doc.sales_order:
-				return
-
-			pro_doc.cancel_reserved_qty_for_wip_and_fg(self)
-
-	def is_stock_reserve_for_work_order(self):
-		if (
-			self.work_order
-			and self.stock_entry_type in ["Material Transfer for Manufacture", "Manufacture"]
-			and frappe.get_cached_value("Work Order", self.work_order, "reserve_stock")
-		):
-			return True
-
-		return False
-
 	@frappe.whitelist()
-	def get_item_details(self, args: ItemDetailsCtx = None, for_update=False):
-		item = frappe.qb.DocType("Item")
-		item_default = frappe.qb.DocType("Item Default")
-
-		query = (
-			frappe.qb.from_(item)
-			.left_join(item_default)
-			.on((item.name == item_default.parent) & (item_default.company == self.company))
-			.select(
-				item.name,
-				item.stock_uom,
-				item.description,
-				item.image,
-				item.item_name,
-				item.item_group,
-				item.has_batch_no,
-				item.sample_quantity,
-				item.has_serial_no,
-				item.allow_alternative_item,
-				item_default.expense_account,
-				item_default.buying_cost_center,
-			)
-			.where(
-				(item.name == args.get("item_code"))
-				& (item.disabled == 0)
-				& (
-					(item.end_of_life.isnull())
-					| (item.end_of_life < "1900-01-01")
-					| (item.end_of_life > nowdate())
-				)
-			)
+	def get_item_details(self, args=None, for_update=False):
+		item = frappe.db.sql(
+			"""select i.name, i.stock_uom, i.description, i.image, i.item_name, i.item_group,
+				i.has_batch_no, i.sample_quantity, i.has_serial_no, i.allow_alternative_item,
+				id.expense_account, id.buying_cost_center
+			from `tabItem` i LEFT JOIN `tabItem Default` id ON i.name=id.parent and id.company=%s
+			where i.name=%s
+				and i.disabled=0
+				and (i.end_of_life is null or i.end_of_life<'1900-01-01' or i.end_of_life > %s)""",
+			(self.company, args.get("item_code"), nowdate()),
+			as_dict=1,
 		)
-		item = query.run(as_dict=True)
 
 		if not item:
 			frappe.throw(
@@ -1719,11 +1645,6 @@ class StockEntry(StockController):
 
 		if self.purpose == "Material Issue":
 			ret["expense_account"] = item.get("expense_account") or item_group_defaults.get("expense_account")
-
-		if self.purpose == "Manufacture":
-			ret["expense_account"] = frappe.get_cached_value(
-				"Company", self.company, "stock_adjustment_account"
-			)
 
 		for company_field, field in {
 			"stock_adjustment_account": "expense_account",
@@ -1947,92 +1868,10 @@ class StockEntry(StockController):
 				self.set_process_loss_qty()
 				self.load_items_from_bom()
 
-		self.set_serial_batch_from_reserved_entry()
 		self.set_scrap_items()
 		self.set_actual_qty()
 		self.validate_customer_provided_item()
 		self.calculate_rate_and_amount(raise_error_if_no_rate=False)
-
-	def set_serial_batch_from_reserved_entry(self):
-		if not self.work_order:
-			return
-
-		if not frappe.get_cached_value("Work Order", self.work_order, "reserve_stock"):
-			return
-
-		if self.purpose not in ["Material Transfer for Manufacture", "Manufacture"]:
-			return
-
-		reservation_entries = self.get_available_reserved_materials()
-
-		for d in self.items:
-			key = (d.item_code, d.s_warehouse)
-			if details := reservation_entries.get(key):
-				if details.get("serial_no"):
-					d.serial_no = "\n".join(details.get("serial_no"))
-
-				if batches := details.get("batch_no"):
-					for batch_no, qty in batches.items():
-						if qty <= 0:
-							continue
-
-						if qty >= d.qty:
-							d.batch_no = batch_no
-							batches[batch_no] -= d.qty
-						else:
-							d.batch_no = batch_no
-							d.qty = qty
-							batches[batch_no] = 0
-
-				d.use_serial_batch_fields = 1
-
-	def get_available_reserved_materials(self):
-		reserved_entries = self.get_reserved_materials()
-		if not reserved_entries:
-			return {}
-
-		itemwise_serial_batch_qty = frappe._dict()
-
-		for d in reserved_entries:
-			key = (d.item_code, d.warehouse)
-			if key not in itemwise_serial_batch_qty:
-				itemwise_serial_batch_qty[key] = frappe._dict(
-					{
-						"serial_no": [],
-						"batch_no": defaultdict(float),
-					}
-				)
-
-			details = itemwise_serial_batch_qty[key]
-			if d.serial_no:
-				details.serial_no.append(d.serial_no)
-			if d.batch_no:
-				details.batch_no[d.batch_no] += d.qty
-
-		return itemwise_serial_batch_qty
-
-	def get_reserved_materials(self):
-		doctype = frappe.qb.DocType("Stock Reservation Entry")
-		serial_batch_doc = frappe.qb.DocType("Serial and Batch Entry")
-
-		query = (
-			frappe.qb.from_(doctype)
-			.inner_join(serial_batch_doc)
-			.on(doctype.name == serial_batch_doc.parent)
-			.select(
-				serial_batch_doc.serial_no,
-				serial_batch_doc.batch_no,
-				serial_batch_doc.qty,
-				doctype.item_code,
-				doctype.warehouse,
-				doctype.name,
-				doctype.transferred_qty,
-				doctype.consumed_qty,
-			)
-			.where((doctype.docstatus == 1) & (doctype.voucher_no == self.work_order))
-		)
-
-		return query.run(as_dict=True)
 
 	def set_scrap_items(self):
 		if self.purpose != "Send to Subcontractor" and self.purpose in ["Manufacture", "Repack"]:

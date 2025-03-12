@@ -43,7 +43,6 @@
   "column_break_28",
   "discount_percentage",
   "discount_amount",
-  "distributed_discount_amount",
   "base_rate_with_margin",
   "sec_break2",
   "rate",
@@ -112,9 +111,7 @@
   "production_plan",
   "production_plan_item",
   "production_plan_sub_assembly_item",
-  "page_break",
-  "column_break_pjyo",
-  "job_card"
+  "page_break"
  ],
  "fields": [
   {
@@ -784,7 +781,7 @@
   },
   {
    "collapsible": 1,
-   "collapsible_depends_on": "eval: doc.margin_type || doc.discount_amount || doc.distributed_discount_amount",
+   "collapsible_depends_on": "eval: doc.margin_type || doc.discount_amount",
    "fieldname": "discount_and_margin_section",
    "fieldtype": "Section Break",
    "label": "Discount and Margin"
@@ -915,23 +912,6 @@
    "fieldtype": "Column Break"
   },
   {
-   "fieldname": "column_break_pjyo",
-   "fieldtype": "Column Break"
-  },
-  {
-   "fieldname": "job_card",
-   "fieldtype": "Link",
-   "label": "Job Card",
-   "options": "Job Card",
-   "search_index": 1
-  },
-  {
-   "fieldname": "distributed_discount_amount",
-   "fieldtype": "Currency",
-   "label": "Distributed Discount Amount",
-   "options": "currency"
-  },
-  {
    "allow_on_submit": 1,
    "fieldname": "subcontracted_quantity",
    "fieldtype": "Float",
@@ -956,7 +936,7 @@
  "quick_entry": 1,
  "row_format": "Dynamic",
  "search_fields": "item_name",
- "sort_field": "creation",
+ "sort_field": "modified",
  "sort_order": "DESC",
  "states": [],
  "track_changes": 1

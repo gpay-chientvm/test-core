@@ -7,7 +7,7 @@
 
 import frappe
 from frappe import _dict
-from frappe.tests import IntegrationTestCase, UnitTestCase
+from frappe.tests.utils import FrappeTestCase
 
 from erpnext.stock.doctype.delivery_note.test_delivery_note import create_delivery_note
 from erpnext.stock.doctype.item.test_item import make_item
@@ -21,19 +21,11 @@ from erpnext.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
 from erpnext.stock.doctype.stock_entry.test_stock_entry import make_serialized_item
 from erpnext.stock.doctype.warehouse.test_warehouse import create_warehouse
 
-EXTRA_TEST_RECORD_DEPENDENCIES = ["Item"]
+test_dependencies = ["Item"]
+test_records = frappe.get_test_records("Serial No")
 
 
-class UnitTestSerialNo(UnitTestCase):
-	"""
-	Unit tests for SerialNo.
-	Use this class for testing individual functions and methods.
-	"""
-
-	pass
-
-
-class TestSerialNo(IntegrationTestCase):
+class TestSerialNo(FrappeTestCase):
 	def tearDown(self):
 		frappe.db.rollback()
 
@@ -55,7 +47,7 @@ class TestSerialNo(IntegrationTestCase):
 		self.assertTrue(SerialNoCannotCannotChangeError, sr.save)
 
 	def test_inter_company_transfer(self):
-		se = make_serialized_item(self, target_warehouse="_Test Warehouse - _TC")
+		se = make_serialized_item(target_warehouse="_Test Warehouse - _TC")
 		serial_nos = get_serial_nos_from_bundle(se.get("items")[0].serial_and_batch_bundle)
 
 		create_delivery_note(item_code="_Test Serialized Item With Series", qty=1, serial_no=[serial_nos[0]])
@@ -85,7 +77,7 @@ class TestSerialNo(IntegrationTestCase):
 		Then Receive into and Deliver from second company.
 		Try to cancel intermediate receipts/deliveries to test if it is blocked.
 		"""
-		se = make_serialized_item(self, target_warehouse="_Test Warehouse - _TC")
+		se = make_serialized_item(target_warehouse="_Test Warehouse - _TC")
 		serial_nos = get_serial_nos_from_bundle(se.get("items")[0].serial_and_batch_bundle)
 
 		sn_doc = frappe.get_doc("Serial No", serial_nos[0])
@@ -146,7 +138,7 @@ class TestSerialNo(IntegrationTestCase):
 		If Receipt is cancelled, it should be Inactive in the same company.
 		"""
 		# Receipt in **first** company
-		se = make_serialized_item(self, target_warehouse="_Test Warehouse - _TC")
+		se = make_serialized_item(target_warehouse="_Test Warehouse - _TC")
 		serial_nos = get_serial_nos_from_bundle(se.get("items")[0].serial_and_batch_bundle)
 		sn_doc = frappe.get_doc("Serial No", serial_nos[0])
 

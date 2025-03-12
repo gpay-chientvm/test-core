@@ -1,6 +1,5 @@
 import frappe
-
-from erpnext.deprecation_dumpster import deprecated
+from frappe.utils.deprecations import deprecated
 
 
 def get_leaderboards():
@@ -219,7 +218,7 @@ def get_all_sales_person(date_range, company, field=None, limit=0):
 	)
 
 
-@deprecated(f"{__name__}.get_date_condition", "unknown", "v16", "No known instructions.")
+@deprecated
 def get_date_condition(date_range, field):
 	date_condition = ""
 	if date_range:

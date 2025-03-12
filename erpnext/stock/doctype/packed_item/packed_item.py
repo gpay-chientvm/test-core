@@ -10,7 +10,7 @@ import frappe
 from frappe.model.document import Document
 from frappe.utils import flt
 
-from erpnext.stock.get_item_details import ItemDetailsCtx, get_item_details, get_price_list_rate
+from erpnext.stock.get_item_details import get_item_details, get_price_list_rate
 
 
 class PackedItem(Document):
@@ -51,16 +51,7 @@ class PackedItem(Document):
 		warehouse: DF.Link | None
 	# end: auto-generated types
 
-	def set_actual_and_projected_qty(self):
-		"Set actual and projected qty based on warehouse and item_code"
-		_bin = frappe.db.get_value(
-			"Bin",
-			{"item_code": self.item_code, "warehouse": self.warehouse},
-			["actual_qty", "projected_qty"],
-			as_dict=True,
-		)
-		self.actual_qty = _bin.actual_qty if _bin else 0
-		self.projected_qty = _bin.projected_qty if _bin else 0
+	pass
 
 
 def make_packing_list(doc):
@@ -243,8 +234,8 @@ def update_packed_item_price_data(pi_row, item_data, doc):
 		return
 
 	item_doc = frappe.get_cached_doc("Item", pi_row.item_code)
-	ctx = ItemDetailsCtx(pi_row.as_dict().copy())
-	ctx.update(
+	row_data = pi_row.as_dict().copy()
+	row_data.update(
 		{
 			"company": doc.get("company"),
 			"price_list": doc.get("selling_price_list"),
@@ -252,10 +243,10 @@ def update_packed_item_price_data(pi_row, item_data, doc):
 			"conversion_rate": doc.get("conversion_rate"),
 		}
 	)
-	if not ctx.transaction_date:
-		ctx.update({"transaction_date": doc.get("transaction_date")})
+	if not row_data.get("transaction_date"):
+		row_data.update({"transaction_date": doc.get("transaction_date")})
 
-	rate = get_price_list_rate(ctx, item_doc).get("price_list_rate")
+	rate = get_price_list_rate(row_data, item_doc).get("price_list_rate")
 
 	pi_row.rate = rate or item_data.get("valuation_rate") or 0.0
 
@@ -323,7 +314,7 @@ def on_doctype_update():
 
 @frappe.whitelist()
 def get_items_from_product_bundle(row):
-	row, items = ItemDetailsCtx(json.loads(row)), []
+	row, items = json.loads(row), []
 
 	bundled_items = get_product_bundle_items(row["item_code"])
 	for item in bundled_items:

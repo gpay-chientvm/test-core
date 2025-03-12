@@ -2,7 +2,7 @@
 # See license.txt
 
 import frappe
-from frappe.tests import IntegrationTestCase, UnitTestCase
+from frappe.tests.utils import FrappeTestCase, change_settings
 from frappe.utils import nowdate
 
 from erpnext.controllers.stock_controller import (
@@ -15,17 +15,10 @@ from erpnext.stock.doctype.delivery_note.test_delivery_note import create_delive
 from erpnext.stock.doctype.item.test_item import create_item
 from erpnext.stock.doctype.stock_entry.stock_entry_utils import make_stock_entry
 
-
-class UnitTestQualityInspection(UnitTestCase):
-	"""
-	Unit tests for QualityInspection.
-	Use this class for testing individual functions and methods.
-	"""
-
-	pass
+# test_records = frappe.get_test_records('Quality Inspection')
 
 
-class TestQualityInspection(IntegrationTestCase):
+class TestQualityInspection(FrappeTestCase):
 	def setUp(self):
 		super().setUp()
 		create_item("_Test Item with QA")
@@ -145,13 +138,9 @@ class TestQualityInspection(IntegrationTestCase):
 
 	def test_make_quality_inspections_from_linked_document(self):
 		dn = create_delivery_note(item_code="_Test Item with QA", do_not_submit=True)
-		if dn.doctype in ["Purchase Receipt", "Purchase Invoice", "Subcontracting Receipt"]:
-			inspection_type = "Incoming"
-		else:
-			inspection_type = "Outgoing"
 		for item in dn.items:
 			item.sample_size = item.qty
-		quality_inspections = make_quality_inspections(dn.doctype, dn.name, dn.items, inspection_type)
+		quality_inspections = make_quality_inspections(dn.doctype, dn.name, dn.items)
 		self.assertEqual(len(dn.items), len(quality_inspections))
 
 		# cleanup
@@ -225,7 +214,7 @@ class TestQualityInspection(IntegrationTestCase):
 		qa.save()
 		self.assertEqual(qa.status, "Accepted")
 
-	@IntegrationTestCase.change_settings("System Settings", {"number_format": "#.###,##"})
+	@change_settings("System Settings", {"number_format": "#.###,##"})
 	def test_diff_number_format(self):
 		self.assertEqual(frappe.db.get_default("number_format"), "#.###,##")  # sanity check
 

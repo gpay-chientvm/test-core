@@ -19,7 +19,7 @@
   }
  ],
  "links": [],
- "modified": "2024-03-27 13:06:37.347035",
+ "modified": "2020-04-10 21:13:09.137898",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Bank Account Type",
@@ -63,7 +63,6 @@
   }
  ],
  "quick_entry": 1,
- "sort_field": "creation",
- "sort_order": "DESC",
- "states": []
+ "sort_field": "modified",
+ "sort_order": "DESC"
 }

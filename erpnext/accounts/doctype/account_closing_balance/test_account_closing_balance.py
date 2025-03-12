@@ -2,17 +2,8 @@
 # See license.txt
 
 # import frappe
-from frappe.tests import IntegrationTestCase, UnitTestCase
+from frappe.tests.utils import FrappeTestCase
 
 
-class UnitTestAccountClosingBalance(UnitTestCase):
-	"""
-	Unit tests for AccountClosingBalance.
-	Use this class for testing individual functions and methods.
-	"""
-
-	pass
-
-
-class TestAccountClosingBalance(IntegrationTestCase):
+class TestAccountClosingBalance(FrappeTestCase):
 	pass

@@ -8,8 +8,6 @@ import frappe
 from frappe import _
 from frappe.utils import formatdate, get_link_to_form
 
-from erpnext.controllers.taxes_and_totals import ItemWiseTaxDetail
-
 
 def execute(filters=None):
 	return VATAuditReport(filters).run()
@@ -127,13 +125,12 @@ class VATAuditReport:
 						item_wise_tax_detail = json.loads(item_wise_tax_detail)
 					else:
 						continue
-					for item_code, tax_data in item_wise_tax_detail.items():
-						tax_data = ItemWiseTaxDetail(**tax_data)
+					for item_code, taxes in item_wise_tax_detail.items():
 						is_zero_rated = self.invoice_items.get(parent).get(item_code).get("is_zero_rated")
 						# to skip items with non-zero tax rate in multiple rows
-						if tax_data.tax_rate == 0 and not is_zero_rated:
+						if taxes[0] == 0 and not is_zero_rated:
 							continue
-						tax_rate = self.get_item_amount_map(parent, item_code, tax_data)
+						tax_rate = self.get_item_amount_map(parent, item_code, taxes)
 
 						if tax_rate is not None:
 							rate_based_dict = self.items_based_on_tax_rate.setdefault(parent, {}).setdefault(
@@ -144,12 +141,10 @@ class VATAuditReport:
 				except ValueError:
 					continue
 
-	# TODO: now that tax_data holds net_amount, this method seems almost obsolete and can be removactored,
-	# gross_amount can be calculated on the file as a list comprehension
-	def get_item_amount_map(self, parent, item_code, tax_data):
+	def get_item_amount_map(self, parent, item_code, taxes):
 		net_amount = self.invoice_items.get(parent).get(item_code).get("net_amount")
-		tax_rate = tax_data.tax_rate
-		tax_amount = tax_data.tax_amount
+		tax_rate = taxes[0]
+		tax_amount = taxes[1]
 		gross_amount = net_amount + tax_amount
 
 		self.item_tax_rate.setdefault(parent, {}).setdefault(

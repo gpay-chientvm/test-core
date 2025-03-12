@@ -1,5 +1,5 @@
 import frappe
-from frappe.tests import IntegrationTestCase
+from frappe.tests.utils import FrappeTestCase, change_settings
 from frappe.utils import today
 
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
@@ -8,7 +8,7 @@ from erpnext.accounts.report.accounts_receivable_summary.accounts_receivable_sum
 from erpnext.accounts.test.accounts_mixin import AccountsTestMixin
 
 
-class TestAccountsReceivable(AccountsTestMixin, IntegrationTestCase):
+class TestAccountsReceivable(AccountsTestMixin, FrappeTestCase):
 	def setUp(self):
 		self.maxDiff = None
 		self.create_company()
@@ -112,7 +112,7 @@ class TestAccountsReceivable(AccountsTestMixin, IntegrationTestCase):
 		self.assertEqual(len(rpt_output), 1)
 		self.assertDictEqual(rpt_output[0], expected_data)
 
-	@IntegrationTestCase.change_settings("Selling Settings", {"cust_master_name": "Naming Series"})
+	@change_settings("Selling Settings", {"cust_master_name": "Naming Series"})
 	def test_02_various_filters_and_output(self):
 		filters = {
 			"company": self.company,

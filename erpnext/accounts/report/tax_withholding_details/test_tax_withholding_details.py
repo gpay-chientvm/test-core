@@ -2,7 +2,7 @@
 # MIT License. See license.txt
 
 import frappe
-from frappe.tests import IntegrationTestCase
+from frappe.tests.utils import FrappeTestCase
 from frappe.utils import today
 
 from erpnext.accounts.doctype.payment_entry.test_payment_entry import create_payment_entry
@@ -16,7 +16,7 @@ from erpnext.accounts.test.accounts_mixin import AccountsTestMixin
 from erpnext.accounts.utils import get_fiscal_year
 
 
-class TestTaxWithholdingDetails(AccountsTestMixin, IntegrationTestCase):
+class TestTaxWithholdingDetails(AccountsTestMixin, FrappeTestCase):
 	def setUp(self):
 		self.create_company()
 		self.clear_old_entries()

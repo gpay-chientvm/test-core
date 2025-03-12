@@ -1,9 +1,10 @@
 # Copyright (c) 2018, Frappe Technologies Pvt. Ltd. and Contributors
 # License: GNU General Public License v3. See license.txt
+
+
 import unittest
 
 import frappe
-from frappe.tests import IntegrationTestCase
 from frappe.utils import today
 
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
@@ -12,13 +13,12 @@ from erpnext.accounts.report.sales_payment_summary.sales_payment_summary import 
 	get_mode_of_payments,
 )
 
-EXTRA_TEST_RECORD_DEPENDENCIES = ["Sales Invoice"]
+test_dependencies = ["Sales Invoice"]
 
 
-class TestSalesPaymentSummary(IntegrationTestCase):
+class TestSalesPaymentSummary(unittest.TestCase):
 	@classmethod
-	def setUpClass(cls):
-		super().setUpClass()
+	def setUpClass(self):
 		create_records()
 		pes = frappe.get_all("Payment Entry")
 		jes = frappe.get_all("Journal Entry")
