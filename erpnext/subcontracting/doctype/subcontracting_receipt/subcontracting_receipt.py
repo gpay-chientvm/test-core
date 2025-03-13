@@ -4,6 +4,7 @@
 import frappe
 from frappe import _
 from frappe.model.mapper import get_mapped_doc
+from frappe.query_builder.functions import Sum
 from frappe.utils import cint, flt, get_link_to_form, getdate, nowdate
 
 import erpnext
@@ -33,13 +34,13 @@ class SubcontractingReceipt(SubcontractingController):
 		)
 
 		additional_costs: DF.Table[LandedCostTaxesandCharges]
-		address_display: DF.SmallText | None
+		address_display: DF.TextEditor | None
 		amended_from: DF.Link | None
 		auto_repeat: DF.Link | None
 		bill_date: DF.Date | None
 		bill_no: DF.Data | None
 		billing_address: DF.Link | None
-		billing_address_display: DF.SmallText | None
+		billing_address_display: DF.TextEditor | None
 		company: DF.Link
 		contact_display: DF.SmallText | None
 		contact_email: DF.SmallText | None
@@ -69,7 +70,7 @@ class SubcontractingReceipt(SubcontractingController):
 		set_posting_time: DF.Check
 		set_warehouse: DF.Link | None
 		shipping_address: DF.Link | None
-		shipping_address_display: DF.SmallText | None
+		shipping_address_display: DF.TextEditor | None
 		status: DF.Literal["", "Draft", "Completed", "Return", "Return Issued", "Cancelled", "Closed"]
 		supplied_items: DF.Table[SubcontractingReceiptSuppliedItem]
 		supplier: DF.Link
@@ -155,6 +156,7 @@ class SubcontractingReceipt(SubcontractingController):
 		self.repost_future_sle_and_gle()
 		self.update_status()
 		self.auto_create_purchase_receipt()
+		self.update_job_card()
 
 	def on_update(self):
 		for table_field in ["items", "supplied_items"]:
@@ -178,6 +180,7 @@ class SubcontractingReceipt(SubcontractingController):
 		self.repost_future_sle_and_gle()
 		self.update_status()
 		self.delete_auto_created_batches()
+		self.update_job_card()
 
 	@frappe.whitelist()
 	def reset_raw_materials(self):
@@ -188,6 +191,23 @@ class SubcontractingReceipt(SubcontractingController):
 		for item in self.items:
 			if item.subcontracting_order:
 				check_on_hold_or_closed_status("Subcontracting Order", item.subcontracting_order)
+
+	def update_job_card(self):
+		for row in self.get("items"):
+			if row.job_card:
+				doc = frappe.get_doc("Job Card", row.job_card)
+				doc.set_manufactured_qty()
+
+	def get_manufactured_qty(self, job_card):
+		table = frappe.qb.DocType("Subcontracting Receipt Item")
+		query = (
+			frappe.qb.from_(table)
+			.select(Sum(table.qty))
+			.where((table.job_card == job_card) & (table.docstatus == 1))
+		)
+
+		qty = query.run()[0][0] or 0.0
+		return flt(qty)
 
 	def validate_items_qty(self):
 		for item in self.items:

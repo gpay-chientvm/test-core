@@ -49,6 +49,9 @@
   "cost_center",
   "dimension_col_break",
   "project",
+  "references_section",
+  "job_card",
+  "column_break_nfod",
   "section_break_34",
   "purchase_order_item",
   "page_break",
@@ -422,7 +425,7 @@
  "quick_entry": 1,
  "row_format": "Dynamic",
  "search_fields": "item_name",
- "sort_field": "modified",
+ "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
  "track_changes": 1

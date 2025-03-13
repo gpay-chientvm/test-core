@@ -381,7 +381,7 @@
    "options": "fa fa-rss"
   },
   {
-   "description": "Will also apply for variants unless overrridden",
+   "description": "Will also apply for variants unless overridden",
    "fieldname": "reorder_levels",
    "fieldtype": "Table",
    "label": "Reorder level based on Warehouse",
@@ -957,7 +957,7 @@
  "search_fields": "item_name,description,item_group,customer_code",
  "show_name_in_global_search": 1,
  "show_preview_popup": 1,
- "sort_field": "modified",
+ "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
  "title_field": "item_name",

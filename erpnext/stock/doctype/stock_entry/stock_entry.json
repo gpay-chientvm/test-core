@@ -14,6 +14,7 @@
   "purpose",
   "add_to_transit",
   "work_order",
+  "job_card",
   "purchase_order",
   "subcontracting_order",
   "delivery_note_no",
@@ -80,7 +81,6 @@
   "col5",
   "per_transferred",
   "total_amount",
-  "job_card",
   "amended_from",
   "credit_note",
   "is_return",
@@ -308,7 +308,7 @@
   },
   {
    "fieldname": "source_address_display",
-   "fieldtype": "Small Text",
+   "fieldtype": "Text Editor",
    "label": "Source Warehouse Address",
    "read_only": 1
   },
@@ -338,7 +338,7 @@
   },
   {
    "fieldname": "target_address_display",
-   "fieldtype": "Small Text",
+   "fieldtype": "Text Editor",
    "label": "Target Warehouse Address",
    "read_only": 1
   },
@@ -466,7 +466,7 @@
   },
   {
    "fieldname": "address_display",
-   "fieldtype": "Small Text",
+   "fieldtype": "Text Editor",
    "label": "Address"
   },
   {
@@ -765,7 +765,7 @@
  ],
  "search_fields": "posting_date, from_warehouse, to_warehouse, purpose, remarks",
  "show_name_in_global_search": 1,
- "sort_field": "modified",
+ "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
  "title_field": "stock_entry_type",

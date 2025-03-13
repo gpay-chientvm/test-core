@@ -4,7 +4,7 @@
 
 import frappe
 from frappe import qb
-from frappe.tests.utils import FrappeTestCase, change_settings
+from frappe.tests import IntegrationTestCase, UnitTestCase
 from frappe.utils import add_days, flt, nowdate
 
 from erpnext.accounts.doctype.account.test_account import create_account
@@ -25,10 +25,19 @@ from erpnext.accounts.doctype.sales_invoice.test_sales_invoice import (
 from erpnext.selling.doctype.sales_order.test_sales_order import make_sales_order
 from erpnext.setup.doctype.employee.test_employee import make_employee
 
-test_dependencies = ["Item"]
+EXTRA_TEST_RECORD_DEPENDENCIES = ["Item", "Currency Exchange"]
 
 
-class TestPaymentEntry(FrappeTestCase):
+class UnitTestPaymentEntry(UnitTestCase):
+	"""
+	Unit tests for PaymentEntry.
+	Use this class for testing individual functions and methods.
+	"""
+
+	pass
+
+
+class TestPaymentEntry(IntegrationTestCase):
 	def tearDown(self):
 		frappe.db.rollback()
 
@@ -425,7 +434,7 @@ class TestPaymentEntry(FrappeTestCase):
 		self.assertEqual(si.payment_schedule[0].outstanding, 0)
 		self.assertEqual(si.payment_schedule[0].discounted_amount, 50)
 
-	@change_settings(
+	@IntegrationTestCase.change_settings(
 		"Accounts Settings",
 		{
 			"allow_multi_currency_invoices_against_single_party_account": 1,
@@ -639,12 +648,9 @@ class TestPaymentEntry(FrappeTestCase):
 		self.assertEqual(flt(pe.references[0].exchange_gain_loss, 2), -94.74)
 
 	def test_payment_entry_retrieves_last_exchange_rate(self):
-		from erpnext.setup.doctype.currency_exchange.test_currency_exchange import (
-			save_new_records,
-			test_records,
-		)
+		from erpnext.setup.doctype.currency_exchange.test_currency_exchange import save_new_records
 
-		save_new_records(test_records)
+		save_new_records(self.globalTestRecords["Currency Exchange"])
 
 		pe = frappe.new_doc("Payment Entry")
 		pe.payment_type = "Pay"
@@ -979,12 +985,9 @@ class TestPaymentEntry(FrappeTestCase):
 		self.assertEqual(flt(expected_party_account_balance, 2), flt(party_account_balance, 2))
 
 	def test_gl_of_multi_currency_payment_transaction(self):
-		from erpnext.setup.doctype.currency_exchange.test_currency_exchange import (
-			save_new_records,
-			test_records,
-		)
+		from erpnext.setup.doctype.currency_exchange.test_currency_exchange import save_new_records
 
-		save_new_records(test_records)
+		save_new_records(self.globalTestRecords["Currency Exchange"])
 		paid_from = create_account(
 			parent_account="Current Liabilities - _TC",
 			account_name="_Test Cash USD",
@@ -1159,7 +1162,7 @@ class TestPaymentEntry(FrappeTestCase):
 		}
 		self.assertDictEqual(ref_details, expected_response)
 
-	@change_settings(
+	@IntegrationTestCase.change_settings(
 		"Accounts Settings",
 		{
 			"unlink_payment_on_cancellation_of_invoice": 1,
@@ -1254,7 +1257,7 @@ class TestPaymentEntry(FrappeTestCase):
 		si3.cancel()
 		si3.delete()
 
-	@change_settings(
+	@IntegrationTestCase.change_settings(
 		"Accounts Settings",
 		{
 			"unlink_payment_on_cancellation_of_invoice": 1,
@@ -1317,6 +1320,43 @@ class TestPaymentEntry(FrappeTestCase):
 
 		so.reload()
 		self.assertEqual(so.advance_paid, so.rounded_total)
+
+	def test_outstanding_invoices_api(self):
+		"""
+		Test if `get_outstanding_reference_documents` fetches invoices in the right order.
+		"""
+		customer = create_customer("Max Mustermann", "INR")
+		create_payment_terms_template()
+
+		# SI has an earlier due date and SI2 has a later due date
+		si = create_sales_invoice(qty=1, rate=100, customer=customer, posting_date=add_days(nowdate(), -4))
+		si2 = create_sales_invoice(do_not_save=1, qty=1, rate=100, customer=customer)
+		si2.payment_terms_template = "Test Receivable Template"
+		si2.submit()
+
+		args = {
+			"posting_date": nowdate(),
+			"company": "_Test Company",
+			"party_type": "Customer",
+			"payment_type": "Pay",
+			"party": customer,
+			"party_account": "Debtors - _TC",
+		}
+		args.update(
+			{
+				"get_outstanding_invoices": True,
+				"from_posting_date": add_days(nowdate(), -4),
+				"to_posting_date": add_days(nowdate(), 2),
+			}
+		)
+		references = get_outstanding_reference_documents(args)
+
+		self.assertEqual(len(references), 3)
+		self.assertEqual(references[0].voucher_no, si.name)
+		self.assertEqual(references[1].voucher_no, si2.name)
+		self.assertEqual(references[2].voucher_no, si2.name)
+		self.assertEqual(references[1].payment_term, "Basic Amount Receivable")
+		self.assertEqual(references[2].payment_term, "Tax Receivable")
 
 	def test_receive_payment_from_payable_party_type(self):
 		"""
@@ -1599,43 +1639,6 @@ class TestPaymentEntry(FrappeTestCase):
 			for field in ["account", "debit", "credit"]:
 				self.assertEqual(self.expected_gle[row][field], gl_entries[row][field])
 
-	def test_outstanding_invoices_api(self):
-		"""
-		Test if `get_outstanding_reference_documents` fetches invoices in the right order.
-		"""
-		customer = create_customer("Max Mustermann", "INR")
-		create_payment_terms_template()
-
-		# SI has an earlier due date and SI2 has a later due date
-		si = create_sales_invoice(qty=1, rate=100, customer=customer, posting_date=add_days(nowdate(), -4))
-		si2 = create_sales_invoice(do_not_save=1, qty=1, rate=100, customer=customer)
-		si2.payment_terms_template = "Test Receivable Template"
-		si2.submit()
-
-		args = {
-			"posting_date": nowdate(),
-			"company": "_Test Company",
-			"party_type": "Customer",
-			"payment_type": "Pay",
-			"party": customer,
-			"party_account": "Debtors - _TC",
-		}
-		args.update(
-			{
-				"get_outstanding_invoices": True,
-				"from_posting_date": add_days(nowdate(), -4),
-				"to_posting_date": add_days(nowdate(), 2),
-			}
-		)
-		references = get_outstanding_reference_documents(args)
-
-		self.assertEqual(len(references), 3)
-		self.assertEqual(references[0].voucher_no, si.name)
-		self.assertEqual(references[1].voucher_no, si2.name)
-		self.assertEqual(references[2].voucher_no, si2.name)
-		self.assertEqual(references[1].payment_term, "Basic Amount Receivable")
-		self.assertEqual(references[2].payment_term, "Tax Receivable")
-
 	def test_reverse_payment_reconciliation(self):
 		customer = create_customer(frappe.generate_hash(length=10), "INR")
 		pe = create_payment_entry(
@@ -1860,7 +1863,7 @@ class TestPaymentEntry(FrappeTestCase):
 		# 'Is Opening' should always be 'No' for normal advance payments
 		self.assertEqual(gl_with_opening_set, [])
 
-	@change_settings("Accounts Settings", {"delete_linked_ledger_entries": 1})
+	@IntegrationTestCase.change_settings("Accounts Settings", {"delete_linked_ledger_entries": 1})
 	def test_delete_linked_exchange_gain_loss_journal(self):
 		from erpnext.accounts.doctype.account.test_account import create_account
 		from erpnext.accounts.doctype.opening_invoice_creation_tool.test_opening_invoice_creation_tool import (

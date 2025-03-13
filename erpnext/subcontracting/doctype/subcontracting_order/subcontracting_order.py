@@ -35,10 +35,10 @@ class SubcontractingOrder(SubcontractingController):
 		)
 
 		additional_costs: DF.Table[LandedCostTaxesandCharges]
-		address_display: DF.SmallText | None
+		address_display: DF.TextEditor | None
 		amended_from: DF.Link | None
 		billing_address: DF.Link | None
-		billing_address_display: DF.SmallText | None
+		billing_address_display: DF.TextEditor | None
 		company: DF.Link
 		contact_display: DF.SmallText | None
 		contact_email: DF.SmallText | None
@@ -58,7 +58,7 @@ class SubcontractingOrder(SubcontractingController):
 		set_reserve_warehouse: DF.Link | None
 		set_warehouse: DF.Link | None
 		shipping_address: DF.Link | None
-		shipping_address_display: DF.SmallText | None
+		shipping_address_display: DF.TextEditor | None
 		status: DF.Literal[
 			"Draft",
 			"Open",
@@ -265,7 +265,7 @@ class SubcontractingOrder(SubcontractingController):
 				bom = (
 					frappe.db.get_value(
 						"Subcontracting BOM",
-						{"finished_good": item.item_code, "is_active": 1},
+						{"finished_good": item.name, "is_active": 1},
 						"finished_good_bom",
 					)
 					or item.default_bom
@@ -273,7 +273,7 @@ class SubcontractingOrder(SubcontractingController):
 
 				items.append(
 					{
-						"item_code": item.item_code,
+						"item_code": item.name,
 						"item_name": item.item_name,
 						"schedule_date": self.schedule_date,
 						"description": item.description,

@@ -4,12 +4,18 @@ from collections import defaultdict
 import frappe
 from frappe.query_builder.functions import CombineDatetime, Sum
 from frappe.utils import flt, nowtime
-from frappe.utils.deprecations import deprecated
 from pypika import Order
+
+from erpnext.deprecation_dumpster import deprecated
 
 
 class DeprecatedSerialNoValuation:
-	@deprecated
+	@deprecated(
+		"erpnext.stock.serial_batch_bundle.SerialNoValuation.calculate_stock_value_from_deprecarated_ledgers",
+		"unknown",
+		"v16",
+		"No known instructions.",
+	)
 	def calculate_stock_value_from_deprecarated_ledgers(self):
 		if not has_sle_for_serial_nos(self.sle.item_code):
 			return
@@ -35,7 +41,12 @@ class DeprecatedSerialNoValuation:
 
 		return serial_nos
 
-	@deprecated
+	@deprecated(
+		"erpnext.stock.serial_batch_bundle.SerialNoValuation.get_incoming_value_for_serial_nos",
+		"unknown",
+		"v16",
+		"No known instructions.",
+	)
 	def get_incoming_value_for_serial_nos(self, serial_nos):
 		from erpnext.stock.utils import get_combine_datetime
 
@@ -64,10 +75,8 @@ class DeprecatedSerialNoValuation:
 					& (table.serial_and_batch_bundle.isnull())
 					& (table.actual_qty > 0)
 					& (table.is_cancelled == 0)
-					& (
-						table.posting_datetime
-						<= get_combine_datetime(self.sle.posting_date, self.sle.posting_time)
-					)
+					& table.posting_datetime
+					<= get_combine_datetime(self.sle.posting_date, self.sle.posting_time)
 				)
 				.orderby(table.posting_datetime, order=Order.desc)
 				.limit(1)
@@ -95,14 +104,24 @@ def has_sle_for_serial_nos(item_code):
 
 
 class DeprecatedBatchNoValuation:
-	@deprecated
+	@deprecated(
+		"erpnext.stock.serial_batch_bundle.BatchNoValuation.calculate_avg_rate_from_deprecarated_ledgers",
+		"unknown",
+		"v16",
+		"No known instructions.",
+	)
 	def calculate_avg_rate_from_deprecarated_ledgers(self):
 		entries = self.get_sle_for_batches()
 		for ledger in entries:
 			self.stock_value_differece[ledger.batch_no] += flt(ledger.batch_value)
 			self.available_qty[ledger.batch_no] += flt(ledger.batch_qty)
 
-	@deprecated
+	@deprecated(
+		"erpnext.stock.serial_batch_bundle.BatchNoValuation.get_sle_for_batches",
+		"unknown",
+		"v16",
+		"No known instructions.",
+	)
 	def get_sle_for_batches(self):
 		from erpnext.stock.utils import get_combine_datetime
 
@@ -152,7 +171,12 @@ class DeprecatedBatchNoValuation:
 
 		return query.run(as_dict=True)
 
-	@deprecated
+	@deprecated(
+		"erpnext.stock.serial_batch_bundle.BatchNoValuation.calculate_avg_rate_for_non_batchwise_valuation",
+		"unknown",
+		"v16",
+		"No known instructions.",
+	)
 	def calculate_avg_rate_for_non_batchwise_valuation(self):
 		if not self.non_batchwise_valuation_batches:
 			return
@@ -193,12 +217,22 @@ class DeprecatedBatchNoValuation:
 				},
 			)
 
-	@deprecated
+	@deprecated(
+		"erpnext.stock.serial_batch_bundle.BatchNoValuation.set_balance_value_for_non_batchwise_valuation_batches",
+		"unknown",
+		"v16",
+		"No known instructions.",
+	)
 	def set_balance_value_for_non_batchwise_valuation_batches(self):
 		self.set_balance_value_from_sl_entries()
 		self.set_balance_value_from_bundle()
 
-	@deprecated
+	@deprecated(
+		"erpnext.stock.serial_batch_bundle.BatchNoValuation.set_balance_value_from_sl_entries",
+		"unknown",
+		"v16",
+		"No known instructions.",
+	)
 	def set_balance_value_from_sl_entries(self) -> None:
 		from erpnext.stock.utils import get_combine_datetime
 
@@ -293,7 +327,6 @@ class DeprecatedBatchNoValuation:
 		data = query.run(as_dict=True)
 		return data[0] if data else {}
 
-	@deprecated
 	def get_last_sle_for_sabb_no_batchwise_valuation(self):
 		sabb = frappe.qb.DocType("Serial and Batch Bundle")
 		sabb_entry = frappe.qb.DocType("Serial and Batch Entry")
@@ -347,7 +380,12 @@ class DeprecatedBatchNoValuation:
 
 		return sle if sle else {}
 
-	@deprecated
+	@deprecated(
+		"erpnext.stock.serial_batch_bundle.BatchNoValuation.set_balance_value_from_bundle",
+		"unknown",
+		"v16",
+		"No known instructions.",
+	)
 	def set_balance_value_from_bundle(self) -> None:
 		bundle = frappe.qb.DocType("Serial and Batch Bundle")
 		bundle_child = frappe.qb.DocType("Serial and Batch Entry")

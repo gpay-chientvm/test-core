@@ -3,10 +3,10 @@
 
 
 # import frappe
-from frappe.model.document import Document
+from erpnext.accounts.doctype.sales_invoice_item.sales_invoice_item import SalesInvoiceItem
 
 
-class POSInvoiceItem(Document):
+class POSInvoiceItem(SalesInvoiceItem):
 	# begin: auto-generated types
 	# This code is auto-generated. Do not modify anything in this block.
 
@@ -39,6 +39,7 @@ class POSInvoiceItem(Document):
 		description: DF.TextEditor
 		discount_amount: DF.Currency
 		discount_percentage: DF.Percent
+		distributed_discount_amount: DF.Currency
 		dn_detail: DF.Data | None
 		enable_deferred_revenue: DF.Check
 		expense_account: DF.Link | None

@@ -7,6 +7,7 @@
  "field_order": [
   "payment_request_type",
   "transaction_date",
+  "failed_reason",
   "column_break_2",
   "naming_series",
   "company",
@@ -52,13 +53,14 @@
   "message",
   "message_examples",
   "mute_email",
-  "payment_url",
   "section_break_7",
   "payment_gateway",
   "payment_account",
   "payment_channel",
   "payment_order",
   "amended_from",
+  "column_break_pnyv",
+  "payment_url",
   "column_break_iiuv",
   "phone_number"
  ],
@@ -270,7 +272,7 @@
    "label": "Recipient Message And Payment Details"
   },
   {
-   "depends_on": "eval: doc.payment_channel != \"Phone\"",
+   "depends_on": "eval: doc.payment_channel == \"Email\" || (!doc.payment_channel)",
    "fieldname": "print_format",
    "fieldtype": "Select",
    "label": "Print Format"
@@ -282,7 +284,7 @@
    "label": "To"
   },
   {
-   "depends_on": "eval: doc.payment_channel != \"Phone\"",
+   "depends_on": "eval: doc.payment_channel == \"Email\" || (!doc.payment_channel)",
    "fieldname": "subject",
    "fieldtype": "Data",
    "in_global_search": 1,
@@ -319,18 +321,18 @@
    "read_only": 1
   },
   {
-   "depends_on": "eval: doc.payment_request_type == 'Inward' || doc.payment_channel != \"Phone\"",
+   "depends_on": "eval: doc.payment_request_type == 'Inward' || doc.payment_channel == \"Email\" || (!doc.payment_channel)",
    "fieldname": "section_break_10",
    "fieldtype": "Section Break"
   },
   {
-   "depends_on": "eval: doc.payment_channel != \"Phone\"",
+   "depends_on": "eval: doc.payment_channel == \"Email\" || (!doc.payment_channel)",
    "fieldname": "message",
    "fieldtype": "Text",
    "label": "Message"
   },
   {
-   "depends_on": "eval: doc.payment_channel != \"Phone\"",
+   "depends_on": "eval: doc.payment_channel == \"Email\" || (!doc.payment_channel)",
    "fieldname": "message_examples",
    "fieldtype": "HTML",
    "label": "Message Examples",
@@ -351,7 +353,7 @@
   {
    "fieldname": "payment_url",
    "fieldtype": "Data",
-   "hidden": 1,
+   "label": "Payment URL",
    "length": 500,
    "options": "URL",
    "read_only": 1
@@ -383,7 +385,7 @@
    "fieldname": "payment_channel",
    "fieldtype": "Select",
    "label": "Payment Channel",
-   "options": "\nEmail\nPhone",
+   "options": "\nEmail\nPhone\nOther",
    "read_only": 1
   },
   {
@@ -399,6 +401,15 @@
    "label": "Amended From",
    "no_copy": 1,
    "options": "Payment Request",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "failed_reason",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Reason for Failure",
+   "no_copy": 1,
    "print_hide": 1,
    "read_only": 1
   },
@@ -419,6 +430,10 @@
    "label": "Company",
    "options": "Company",
    "read_only": 1
+  },
+  {
+   "fieldname": "column_break_pnyv",
+   "fieldtype": "Column Break"
   },
   {
    "fieldname": "party_account_currency",
@@ -447,7 +462,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-12-27 21:29:10.361894",
+ "modified": "2025-01-04 05:39:32.448857",
  "modified_by": "Administrator",
  "module": "Accounts",
  "name": "Payment Request",
@@ -483,7 +498,7 @@
   }
  ],
  "show_preview_popup": 1,
- "sort_field": "modified",
+ "sort_field": "creation",
  "sort_order": "DESC",
  "states": []
 }

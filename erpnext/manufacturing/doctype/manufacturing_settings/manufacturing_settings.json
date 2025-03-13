@@ -153,7 +153,7 @@
   {
    "fieldname": "raw_materials_consumption_section",
    "fieldtype": "Section Break",
-   "label": "Raw Materials Consumption "
+   "label": "Raw Materials Consumption"
   },
   {
    "fieldname": "column_break_16",
@@ -255,7 +255,7 @@
    "write": 1
   }
  ],
- "sort_field": "modified",
+ "sort_field": "creation",
  "sort_order": "DESC",
  "states": [],
  "track_changes": 1

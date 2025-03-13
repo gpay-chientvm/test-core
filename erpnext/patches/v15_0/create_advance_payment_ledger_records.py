@@ -4,7 +4,9 @@ from frappe.query_builder.custom import ConstantColumn
 
 
 def get_advance_doctypes() -> list:
-	return frappe.get_hooks("advance_payment_doctypes")
+	return frappe.get_hooks("advance_payment_receivable_doctypes") + frappe.get_hooks(
+		"advance_payment_payable_doctypes"
+	)
 
 
 def get_payments_with_so_po_reference() -> list:
